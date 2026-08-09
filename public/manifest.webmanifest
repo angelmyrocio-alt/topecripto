@@ -1,0 +1,13 @@
+{
+  "name": "Topecripto",
+  "short_name": "Topecripto",
+  "description": "Reality check de predicciones cripto. Sin hype, solo números.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05070a",
+  "theme_color": "#0b0e13",
+  "icons": [
+    { "src": "/icon.png", "sizes": "1000x1000", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-symbol.png", "sizes": "1000x1000", "type": "image/png", "purpose": "maskable" }
+  ]
+}
