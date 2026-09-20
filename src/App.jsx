@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { track } from "@vercel/analytics";
 
 // ===== Referencias. TOTAL_CRYPTO se actualiza en vivo desde la API. =====
 let TOTAL_CRYPTO = 2.16e12;            // fallback; se reemplaza con el dato en vivo
@@ -15,6 +16,12 @@ const BASE = [
   { sym: "HBAR", name: "Hedera",     price: 0.06,  supply: 50e9,    absurd: 2 },
   { sym: "DOGE", name: "Dogecoin",   price: 0.07,  supply: 148e9,   absurd: 0.30 },
 ];
+
+// ===== Oferta Fundador (early access) — ajusta estos valores a mano =====
+const FOUNDER_SPOTS = 200;      // plazas totales
+const FOUNDER_TAKEN = 0;        // plazas ya reservadas (súbelo tú según vayan cayendo)
+const FOUNDER_FORM_URL = "";    // opcional: pega aquí tu formulario (Tally/Google Forms) para capturar emails.
+                                // Si lo dejas vacío, el botón solo cuenta el clic (modo demo, como el resto).
 
 const CX = 200, CY = 200, R = 150, SWEEP = 125;
 const polar = (cx, cy, r, a) => { const rad = (a * Math.PI) / 180; return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) }; };
@@ -34,7 +41,7 @@ const fmtPrice = (n) => n >= 1000 ? "$" + n.toLocaleString("es-ES", { maximumFra
 export default function App() {
   const [screen, setScreen] = useState("welcome"); // welcome, how, signup, plans, app
   const [plan, setPlan] = useState("free");
-  const [interest, setInterest] = useState({ pro: 0, over: 0, detector: 0, watch: 0 });
+  const [interest, setInterest] = useState({ pro: 0, over: 0, detector: 0, watch: 0, founder: 0 });
   const bump = (k) => setInterest((s) => ({ ...s, [k]: s[k] + 1 }));
   const [coins, setCoins] = useState(BASE);
   const [live, setLive] = useState(false);
@@ -169,11 +176,14 @@ function Plans({ onEnter, interest, bump }) {
       <div style={S.howHead}>Planes</div>
       <div style={S.howLead}>Empieza gratis con todo el análisis. Pro y Overdrive llegan muy pronto.</div>
 
+      {/* OFERTA FUNDADOR */}
+      <FounderOffer bump={bump} interest={interest} />
+
       {/* FREE */}
       <div style={{ ...S.planCard, borderColor: "#1c232d" }}>
         <div style={S.planTop}><span style={{ ...S.planName, color: "#8891a8" }}>Free</span><span style={S.planPrice}>0 €</span></div>
         {feats.free.map((f) => <div key={f} style={S.planFeat}><span style={{ color: "#35c759" }}>✓</span> {f}</div>)}
-        <button onClick={onEnter} style={{ ...S.planCta, ...S.planCtaBest }}>Empezar gratis</button>
+        <button onClick={() => { trackInterest("choose_free"); onEnter(); }} style={{ ...S.planCta, ...S.planCtaBest }}>Empezar gratis</button>
       </div>
 
       {/* PRO - muy pronto */}
@@ -181,8 +191,8 @@ function Plans({ onEnter, interest, bump }) {
         <div style={S.soonTag}>MUY PRONTO</div>
         <div style={S.planTop}><span style={{ ...S.planName, color: "#e9f0f7" }}>Pro</span><span style={S.planPrice}>3,99 €<span style={S.planSub}> /mes</span></span></div>
         {feats.pro.map((f) => <div key={f} style={S.planFeat}><span style={{ color: "#5b6675" }}>•</span> {f}</div>)}
-        <button onClick={() => { bump("pro"); setMsg("pro"); }} style={S.planCta}>Me interesa</button>
-        {msg === "pro" && <div style={S.soonBox}><b style={{ color: "#e9f0f7" }}>Topecripto Pro — en construcción.</b> {soonMsg.pro} <span style={S.demoCount}>demo · {interest.pro} interesado{interest.pro === 1 ? "" : "s"}</span></div>}
+        <button onClick={() => { bump("pro"); trackInterest("interest_pro"); setMsg("pro"); }} style={S.planCta}>Me interesa</button>
+        {msg === "pro" && <div style={S.soonBox}><b style={{ color: "#e9f0f7" }}>Topecripto Pro — en construcción.</b> {soonMsg.pro}</div>}
       </div>
 
       {/* OVERDRIVE - muy pronto */}
@@ -190,8 +200,8 @@ function Plans({ onEnter, interest, bump }) {
         <div style={{ ...S.soonTag, background: "#e0a92e" }}>MUY PRONTO</div>
         <div style={S.planTop}><span style={{ ...S.planName, color: "#ffd35a" }}>Overdrive</span><span style={S.planPrice}>9,99 €<span style={S.planSub}> /mes</span></span></div>
         {feats.over.map((f) => <div key={f} style={S.planFeat}><span style={{ color: "#5b6675" }}>•</span> {f}</div>)}
-        <button onClick={() => { bump("over"); setMsg("over"); }} style={S.planCta}>Me interesa</button>
-        {msg === "over" && <div style={{ ...S.soonBox, borderColor: "#4a3d15" }}><b style={{ color: "#ffd35a" }}>Topecripto Overdrive — en construcción.</b> {soonMsg.over} <span style={S.demoCount}>demo · {interest.over} interesado{interest.over === 1 ? "" : "s"}</span></div>}
+        <button onClick={() => { bump("over"); trackInterest("interest_over"); setMsg("over"); }} style={S.planCta}>Me interesa</button>
+        {msg === "over" && <div style={{ ...S.soonBox, borderColor: "#4a3d15" }}><b style={{ color: "#ffd35a" }}>Topecripto Overdrive — en construcción.</b> {soonMsg.over}</div>}
       </div>
 
       <div style={S.legal}>Nada se cobra todavía. «Me interesa» solo cuenta el interés (sin pedir datos). Cuando haya demanda, activaremos el pago.</div>
@@ -203,7 +213,7 @@ function Plans({ onEnter, interest, bump }) {
 function Main({ coins, live, onPlans, onRestart, interest, bump }) {
   const [tab, setTab] = useState("diag");
   const [ci, setCi] = useState(2);
-  const [price, setPrice] = useState((coins[2] || coins[0]).price * 8);
+  const [price, setPrice] = useState((coins[2] || coins[0]).price * 0.3);
   const coin = coins[ci] || coins[0];
 
   return (
@@ -239,12 +249,26 @@ function Main({ coins, live, onPlans, onRestart, interest, bump }) {
 function Diag({ coins, ci, setCi, price, setPrice }) {
   const coin = coins[ci] || coins[0];
   const raf = useRef(null); const [playing, setPlaying] = useState(false);
-  useEffect(() => { const c = coins[ci] || coins[0]; setPrice(c.price * 8); }, [ci]);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { const c = coins[ci] || coins[0]; setPrice(c.price * 0.3); }, [ci]);
   const mcap = price * coin.supply, mult = price / coin.price, pct = (mcap / TOTAL_CRYPTO) * 100;
   const z = zoneFor(mcap), angle = tToAngle(mcapToT(mcap));
   const l2 = mcap > GOLD ? "Más que todo el oro del mundo" : mcap > APPLE ? `${(mcap / APPLE).toFixed(1)}× Apple` : mcap > TOTAL_CRYPTO ? `${(mcap / TOTAL_CRYPTO).toFixed(1)}× todo el cripto` : `${((mcap / GOLD) * 100).toFixed(1)}% del oro mundial`;
   const play = () => { if (playing) return; if (raf.current) cancelAnimationFrame(raf.current); const from = coin.price, to = coin.absurd, dur = 4200, t0 = performance.now(); setPlaying(true); setPrice(from); const step = (now) => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); setPrice(from * Math.pow(to / from, e)); if (k < 1) raf.current = requestAnimationFrame(step); else setPlaying(false); }; raf.current = requestAnimationFrame(step); };
   const pMin = coin.price * 0.3, pMax = coin.price * 300, sVal = (Math.log(price / pMin) / Math.log(pMax / pMin)) * 1000;
+  const share = async () => {
+    const txt = `${coin.sym} a ${fmtPrice(price)} → ${z.tag}. Sería ${fmtMcap(mcap)} de capitalización (${l2}). Compruébalo en Topecripto:`;
+    const url = "https://topecripto.com";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Topecripto", text: txt, url });
+      } else {
+        await navigator.clipboard.writeText(txt + " " + url);
+        setCopied(true); setTimeout(() => setCopied(false), 2500);
+      }
+      trackInterest("share");
+    } catch { /* el usuario canceló */ }
+  };
   return (
     <div>
       <div style={S.coinRow} className="scroll">
@@ -279,6 +303,7 @@ function Diag({ coins, ci, setCi, price, setPrice }) {
       </div>
       <div style={S.compare}>{l2}</div>
       <button onClick={play} disabled={playing} style={{ ...S.ctaGhost, marginTop: 4 }}>{playing ? "…" : "▶ Diagnóstico automático"}</button>
+      <button onClick={share} style={S.ctaShare}>{copied ? "✓ Copiado al portapapeles" : "↗ Compartir veredicto"}</button>
     </div>
   );
 }
@@ -322,9 +347,60 @@ function ComingSoon({ k, title, desc, interest, bump }) {
       <div style={S.wallT}>{title}</div>
       <div style={S.wallD}>{desc}</div>
       {done ? (
-        <div style={S.thanks}>Anotado. Gracias por la señal.<div style={S.demoCount}>demo · {interest[k]} interesado{interest[k] === 1 ? "" : "s"}</div></div>
+        <div style={S.thanks}>Anotado. Gracias por la señal.</div>
       ) : (
-        <button onClick={() => { bump(k); setDone(true); }} style={S.ctaMain}>Me interesa esta función</button>
+        <button onClick={() => { bump(k); trackInterest("interest_" + k); setDone(true); }} style={S.ctaMain}>Me interesa esta función</button>
+      )}
+    </div>
+  );
+}
+
+// Registra interés de forma SILENCIOSA (nada visible para el visitante).
+// Tú lo consultas por tu lado: Vercel Analytics / Google Analytics si están,
+// y siempre un contador local en el navegador (localStorage: "tc_founder_reserve").
+function trackInterest(name) {
+  try {
+    track(name);                                         // Vercel Analytics (panel privado)
+    if (typeof window !== "undefined") {
+      const k = "tc_" + name;
+      const n = parseInt(localStorage.getItem(k) || "0", 10) + 1;
+      localStorage.setItem(k, String(n));                // respaldo local
+    }
+  } catch { /* sin ruido */ }
+}
+
+function FounderOffer({ bump, interest }) {
+  const [done, setDone] = useState(false);
+  // Contador VISIBLE: la base que fijas a mano (FOUNDER_TAKEN) + las reservas de esta sesión.
+  const taken = Math.min(FOUNDER_SPOTS, FOUNDER_TAKEN + interest.founder);
+  const left = Math.max(0, FOUNDER_SPOTS - taken);
+  const pct = Math.min(100, (taken / FOUNDER_SPOTS) * 100);
+  const reserve = () => {
+    bump("founder");            // conteo interno de la sesión (no se muestra)
+    trackInterest("founder_reserve"); // conteo privado real (oculto)
+    setDone(true);
+    if (FOUNDER_FORM_URL) window.open(FOUNDER_FORM_URL, "_blank", "noopener");
+  };
+  return (
+    <div style={S.founderCard}>
+      <div style={S.founderGlow} />
+      <div style={S.founderTag}>OFERTA FUNDADOR · {FOUNDER_SPOTS} PLAZAS</div>
+      <div style={S.founderTop}>
+        <span style={S.founderName}>Fundador</span>
+        <span style={S.founderPrice}>20 €<span style={S.planSub}> /año</span></span>
+      </div>
+      <div style={S.founderPitch}>Solo para los primeros {FOUNDER_SPOTS}. Cuando Pro y Overdrive se activen, entras al precio de fundador: por debajo del precio normal.</div>
+      {["Acceso anticipado a Pro y Overdrive", "Precio de fundador, más barato que el normal", "Decides qué funciones se construyen primero"].map((f) => (
+        <div key={f} style={S.planFeat}><span style={{ color: "#ffd35a" }}>★</span> {f}</div>
+      ))}
+      <div style={S.founderBarWrap}>
+        <div style={S.founderBarBg}><div style={{ ...S.founderBarFill, width: pct + "%" }} /></div>
+        <div style={S.founderBarLbl}>{taken} de {FOUNDER_SPOTS} plazas · quedan {left}</div>
+      </div>
+      {done ? (
+        <div style={S.founderDone}>{FOUNDER_FORM_URL ? "¡Genial! Completa tus datos en la pestaña que se ha abierto." : "Plaza anotada. Te avisamos en cuanto activemos la oferta."}</div>
+      ) : (
+        <button onClick={reserve} style={S.founderCta}>Reservar mi plaza</button>
       )}
     </div>
   );
@@ -370,6 +446,7 @@ const S = {
   welcomeFoot: { fontSize: 10, color: "#454f5b", marginTop: 16 },
   ctaMain: { width: "100%", padding: "13px 0", fontSize: 14, fontWeight: 700, color: "#0b0e13", background: "linear-gradient(180deg,#ff4d4d,#e01e1e)", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", letterSpacing: ".02em", boxShadow: "0 6px 20px rgba(224,30,30,.35)" },
   ctaGhost: { width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 600, color: "#c7d0dc", background: "#0e131a", border: "1px solid #232a35", borderRadius: 11, cursor: "pointer", fontFamily: "inherit", marginTop: 8 },
+  ctaShare: { width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, color: "#ff5b5b", background: "#160d0f", border: "1px solid #7a2020", borderRadius: 11, cursor: "pointer", fontFamily: "inherit", marginTop: 8, letterSpacing: ".02em" },
   howHead: { fontFamily: "'Rajdhani',sans-serif", fontSize: 26, fontWeight: 700, color: "#fff", marginBottom: 4 },
   howLead: { fontSize: 13, color: "#8891a8", lineHeight: 1.45, marginBottom: 16 },
   stepRow: { display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" },
@@ -430,6 +507,19 @@ const S = {
   resPrice: { fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, color: "#c7d0dc", fontSize: 15, width: 72 },
   resMcap: { flex: 1, fontSize: 12, color: "#8891a8", textAlign: "right" },
   resTag: { fontSize: 9.5, fontWeight: 700, color: "#0b0e13", padding: "3px 7px", borderRadius: 5 },
+  founderCard: { position: "relative", overflow: "hidden", background: "linear-gradient(180deg,#151119,#0b0f15)", border: "1px solid #7a5a10", borderRadius: 14, padding: "18px 15px 16px", marginBottom: 14, boxShadow: "0 10px 30px rgba(224,169,46,.14)" },
+  founderGlow: { position: "absolute", top: -45, right: -35, width: 130, height: 130, background: "radial-gradient(circle,rgba(224,169,46,.35),transparent 70%)", pointerEvents: "none" },
+  founderTag: { position: "relative", display: "inline-block", background: "linear-gradient(90deg,#ffd35a,#e0a92e)", color: "#0b0e13", fontSize: 9.5, fontWeight: 700, padding: "3px 9px", borderRadius: 5, letterSpacing: ".08em", marginBottom: 11 },
+  founderTop: { position: "relative", display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 },
+  founderName: { fontFamily: "'Rajdhani',sans-serif", fontSize: 24, fontWeight: 700, letterSpacing: ".04em", color: "#ffd35a" },
+  founderPrice: { fontFamily: "'Rajdhani',sans-serif", fontSize: 28, fontWeight: 700, color: "#fff" },
+  founderPitch: { position: "relative", fontSize: 12.5, color: "#aab4c0", lineHeight: 1.5, marginBottom: 12 },
+  founderBarWrap: { position: "relative", margin: "13px 0 4px" },
+  founderBarBg: { height: 8, borderRadius: 6, background: "#1c232d", overflow: "hidden" },
+  founderBarFill: { height: "100%", borderRadius: 6, background: "linear-gradient(90deg,#ffd35a,#e0a92e)", transition: "width .5s" },
+  founderBarLbl: { fontSize: 10.5, color: "#ffd35a", marginTop: 6, letterSpacing: ".04em" },
+  founderCta: { position: "relative", width: "100%", padding: "13px 0", marginTop: 12, fontSize: 14, fontWeight: 700, color: "#0b0e13", background: "linear-gradient(180deg,#ffd35a,#e0a92e)", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", letterSpacing: ".02em", boxShadow: "0 6px 20px rgba(224,169,46,.3)" },
+  founderDone: { position: "relative", fontSize: 12.5, color: "#35c759", fontWeight: 600, textAlign: "center", marginTop: 12, lineHeight: 1.5 },
   wall: { textAlign: "center", padding: "36px 20px", background: "#0b0f15", border: "1px solid #1c232d", borderRadius: 14 },
   wallT: { fontSize: 16, fontWeight: 700, color: "#e9f0f7", margin: "8px 0 6px" },
   wallD: { fontSize: 12.5, color: "#8891a8", lineHeight: 1.45, marginBottom: 16 },

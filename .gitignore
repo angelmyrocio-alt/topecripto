@@ -1,0 +1,18 @@
+# Dependencias
+node_modules
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Entorno / secretos
+.env
+.env.*
+
+# Vercel
+.vercel
+
+# Sistema
+.DS_Store
+Thumbs.db
