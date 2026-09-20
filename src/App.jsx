@@ -23,6 +23,10 @@ const FOUNDER_TAKEN = 0;        // plazas ya reservadas (súbelo tú según vaya
 const FOUNDER_FORM_URL = "";    // opcional: pega aquí tu formulario (Tally/Google Forms) para capturar emails.
                                 // Si lo dejas vacío, el botón solo cuenta el clic (modo demo, como el resto).
 
+// ===== Acceso a funciones completas (Detector + Watchlist) =====
+// El público ve "PRONTO". Con una clave (?acceso=CODIGO) el SERVIDOR valida
+// y cuenta 30 días desde el primer uso. Las claves se generan en /api/keys.
+
 const CX = 200, CY = 200, R = 150, SWEEP = 125;
 const polar = (cx, cy, r, a) => { const rad = (a * Math.PI) / 180; return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) }; };
 const arc = (cx, cy, r, a0, a1) => { const s = polar(cx, cy, r, a0), e = polar(cx, cy, r, a1); const l = Math.abs(a1 - a0) <= 180 ? 0 : 1; return `M ${s.x} ${s.y} A ${r} ${r} 0 ${l} 1 ${e.x} ${e.y}`; };
@@ -45,6 +49,27 @@ export default function App() {
   const bump = (k) => setInterest((s) => ({ ...s, [k]: s[k] + 1 }));
   const [coins, setCoins] = useState(BASE);
   const [live, setLive] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  // Desbloqueo validado en el servidor: ?acceso=CODIGO (o el guardado la última vez).
+  useEffect(() => {
+    let alive = true;
+    let code = null;
+    try {
+      code = new URLSearchParams(window.location.search).get("acceso");
+      if (!code) code = localStorage.getItem("tc_code");
+    } catch { /* nada */ }
+    if (!code) return;
+    fetch("/api/redeem?code=" + encodeURIComponent(code))
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d && d.ok) { setUnlocked(true); try { localStorage.setItem("tc_code", code); } catch {} }
+        else { try { localStorage.removeItem("tc_code"); } catch {} }
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // Precios en vivo desde nuestra función de servidor (que oculta la clave).
   // BASE actúa de placeholder hasta que llegan los datos reales.
@@ -74,7 +99,7 @@ export default function App() {
         {screen === "how" && <How onNext={() => setScreen("signup")} onBack={() => setScreen("welcome")} />}
         {screen === "signup" && <Signup onNext={() => setScreen("plans")} />}
         {screen === "plans" && <Plans onEnter={() => { setPlan("free"); setScreen("app"); }} interest={interest} bump={bump} />}
-        {screen === "app" && <Main coins={coins} live={live} onPlans={() => setScreen("plans")} onRestart={() => setScreen("welcome")} interest={interest} bump={bump} />}
+        {screen === "app" && <Main coins={coins} live={live} onPlans={() => setScreen("plans")} onRestart={() => setScreen("welcome")} interest={interest} bump={bump} unlocked={unlocked} />}
       </div>
       {screen !== "app" && (
         <div style={S.progress}>
@@ -210,7 +235,7 @@ function Plans({ onEnter, interest, bump }) {
 }
 
 // ===== 5. APP =====
-function Main({ coins, live, onPlans, onRestart, interest, bump }) {
+function Main({ coins, live, onPlans, onRestart, interest, bump, unlocked }) {
   const [tab, setTab] = useState("diag");
   const [ci, setCi] = useState(2);
   const [price, setPrice] = useState((coins[2] || coins[0]).price * 0.3);
@@ -223,20 +248,24 @@ function Main({ coins, live, onPlans, onRestart, interest, bump }) {
           <span style={S.brand}>TOPE<span style={{ color: "#ff2d2d" }}>CRIPTO</span></span>
           <span style={S.live}><i style={{ ...S.dot, background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : "cargando…"}</span>
         </div>
-        <button onClick={onPlans} style={S.planChip}>FREE · ver planes</button>
+        <button onClick={onPlans} style={{ ...S.planChip, ...(unlocked ? S.planChipFull : {}) }}>{unlocked ? "ACCESO COMPLETO ✓" : "FREE · ver planes"}</button>
       </div>
 
       <div style={S.nav}>
         {[["diag", "Diagnóstico"], ["detect", "Detector"], ["watch", "Watchlist"]].map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{ ...S.navBtn, ...(tab === k ? S.navOn : {}) }}>
-            {l}{k !== "diag" && <span style={S.proPill}>PRONTO</span>}
+            {l}{k !== "diag" && !unlocked && <span style={S.proPill}>PRONTO</span>}
           </button>
         ))}
       </div>
 
       {tab === "diag" && <Diag coins={coins} ci={ci} setCi={setCi} price={price} setPrice={setPrice} />}
-      {tab === "detect" && <ComingSoon k="detector" title="Detector de tablas" desc="Pega la tabla de un influencer y te marca en rojo qué objetivos rompen la aritmética. En construcción, con datos en vivo contrastados." interest={interest} bump={bump} />}
-      {tab === "watch" && <ComingSoon k="watch" title="Watchlist" desc="Guarda tus objetivos y revísalos de un vistazo. En construcción." interest={interest} bump={bump} />}
+      {tab === "detect" && (unlocked
+        ? <Detector coins={coins} />
+        : <ComingSoon k="detector" title="Detector de tablas" desc="Pega la tabla de un influencer y te marca en rojo qué objetivos rompen la aritmética. En construcción, con datos en vivo contrastados." interest={interest} bump={bump} />)}
+      {tab === "watch" && (unlocked
+        ? <Watchlist coins={coins} />
+        : <ComingSoon k="watch" title="Watchlist" desc="Guarda tus objetivos y revísalos de un vistazo. En construcción." interest={interest} bump={bump} />)}
 
       <div style={S.appFoot}>
         <span>{live ? "Datos en vivo · CoinGecko" : "Cargando datos en vivo…"} · No es asesoramiento</span>
@@ -481,6 +510,7 @@ const S = {
   live: { fontSize: 9, letterSpacing: ".1em", color: "#5b6675", display: "flex", alignItems: "center", gap: 5 },
   dot: { width: 6, height: 6, borderRadius: "50%", background: "#35c759", boxShadow: "0 0 6px #35c759", animation: "blink 1.4s infinite", display: "inline-block" },
   planChip: { fontSize: 10.5, fontWeight: 700, letterSpacing: ".06em", color: "#8891a8", background: "#0e131a", border: "1px solid #1c232d", borderRadius: 8, padding: "7px 11px", cursor: "pointer" },
+  planChipFull: { color: "#0b0e13", background: "linear-gradient(90deg,#ffd35a,#e0a92e)", borderColor: "#e0a92e" },
   chipPro: { color: "#0b0e13", background: "#e9f0f7", borderColor: "#e9f0f7" },
   chipOver: { color: "#0b0e13", background: "linear-gradient(90deg,#ffd35a,#e0a92e)", borderColor: "#e0a92e" },
   nav: { display: "flex", gap: 5, background: "#0b0f15", padding: 4, borderRadius: 11, marginBottom: 12 },
