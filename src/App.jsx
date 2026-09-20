@@ -360,7 +360,8 @@ function ComingSoon({ k, title, desc, interest, bump }) {
 // y siempre un contador local en el navegador (localStorage: "tc_founder_reserve").
 function trackInterest(name) {
   try {
-    track(name);                                         // Vercel Analytics (panel privado)
+    track(name);                                         // Vercel Analytics (visitas)
+    fetch("/api/track?e=" + encodeURIComponent(name)).catch(() => {}); // contador propio de clics
     if (typeof window !== "undefined") {
       const k = "tc_" + name;
       const n = parseInt(localStorage.getItem(k) || "0", 10) + 1;
