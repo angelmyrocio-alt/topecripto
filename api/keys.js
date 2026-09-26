@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   try {
     if (q.new) {
       const code = newCode();
-      const days = Math.max(1, parseInt(q.days || "30", 10) || 30);
+      const days = Math.max(1, parseInt(q.days || "7", 10) || 7);
       const note = String(q.note || "").slice(0, 60);
       await redis(["SET", `code:${code}`, JSON.stringify({ created: Date.now(), activatedAt: null, days, note })]);
       await redis(["RPUSH", "codes:list", code]);
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       if (o.revoked) estado = "anulada";
       else if (!o.activatedAt) estado = "sin usar";
       else {
-        const until = o.activatedAt + (o.days || 30) * 86400000;
+        const until = o.activatedAt + (o.days || 7) * 86400000;
         const left = Math.ceil((until - Date.now()) / 86400000);
         if (left > 0) { estado = "activa"; dias = `${left} días`; }
         else estado = "caducada";
@@ -88,8 +88,8 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .empty{color:#5b6675;font-size:13px;margin-top:16px}
 </style></head><body><div class="card">
 <h1>Topecripto · Claves de acceso</h1>
-<p class="sub">Cada clave da 30 días de acceso completo (Detector + Watchlist), contados desde el primer uso. Validadas en el servidor.</p>
-<a class="btn" href="${base}/api/keys?key=${encodeURIComponent(secret)}&new=1">+ Generar clave nueva (30 días)</a>
+<p class="sub">Cada clave da 7 días de acceso completo a Pro, contados desde el primer uso. Validadas en el servidor.</p>
+<a class="btn" href="${base}/api/keys?key=${encodeURIComponent(secret)}&new=1">+ Generar clave nueva (7 días)</a>
 ${created}
 ${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
 </div></body></html>`);

@@ -1,4 +1,4 @@
-// Valida una clave de acceso en el servidor y cuenta 30 días desde el primer uso.
+// Valida una clave de acceso en el servidor y cuenta 7 días desde el primer uso.
 // La caducidad vive en Upstash: no se puede resetear desde el navegador.
 async function redis(cmd) {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       obj.activatedAt = Date.now();
       await redis(["SET", `code:${code}`, JSON.stringify(obj)]);
     }
-    const until = obj.activatedAt + (obj.days || 30) * 86400000;
+    const until = obj.activatedAt + (obj.days || 7) * 86400000;
     if (Date.now() > until) { res.status(200).json({ ok: false, reason: "caducada", until }); return; }
     res.status(200).json({ ok: true, until });
   } catch {
