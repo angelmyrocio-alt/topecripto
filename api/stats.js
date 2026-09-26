@@ -1,13 +1,15 @@
 // Página privada de estadísticas. Ábrela con: /api/stats?key=TU_CLAVE
 // La clave se guarda en la variable de entorno STATS_KEY (en Vercel).
 const EVENTS = [
-  ["founder_reserve", "Reservas Fundador"],
-  ["choose_free", "Entradas en Free"],
-  ["interest_pro", "Interesados en Pro"],
-  ["interest_over", "Interesados en Overdrive"],
-  ["interest_detector", "Interes Detector"],
-  ["interest_watch", "Interes Watchlist"],
+  ["open_pro", "Visitas a la pestaña Pro"],
+  ["follow_tiktok", "Clics en seguir TikTok"],
+  ["follow_instagram", "Clics en seguir Instagram"],
+  ["zeros_play", "Partidas al juego de los ceros"],
   ["share", "Veredictos compartidos"],
+  // Versión anterior (se conservan para ver el histórico)
+  ["founder_reserve", "Antes: reservas Fundador"],
+  ["interest_pro", "Antes: interesados en Pro"],
+  ["interest_over", "Antes: interesados en Overdrive"],
 ];
 
 function creds() {

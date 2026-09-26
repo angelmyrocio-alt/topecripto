@@ -1,8 +1,7 @@
 // Cuenta clics de forma anónima (sin datos personales, sin cookies).
 // Guarda un contador por evento en Upstash (base de datos gratis conectada a Vercel).
 const ALLOWED = new Set([
-  "founder_reserve", "choose_free", "interest_pro", "interest_over",
-  "interest_detector", "interest_watch", "share",
+  "open_pro", "follow_tiktok", "follow_instagram", "zeros_play", "share",
 ]);
 
 function creds() {
