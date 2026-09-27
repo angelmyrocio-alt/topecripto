@@ -1,6 +1,9 @@
 // Página privada de estadísticas. Ábrela con: /api/stats?key=TU_CLAVE
 // La clave se guarda en la variable de entorno STATS_KEY (en Vercel).
 const EVENTS = [
+  ["visit", "Visitas a la web (total)"],
+  ["visit_ig", "Visitas desde Instagram"],
+  ["visit_tt", "Visitas desde TikTok"],
   ["open_pro", "Visitas a la pestaña Pro"],
   ["follow_tiktok", "Clics en seguir TikTok"],
   ["follow_instagram", "Clics en seguir Instagram"],

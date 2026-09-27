@@ -112,6 +112,19 @@ export default function App() {
     return () => { alive = false; };
   }, []);
 
+  // De dónde llega la gente: ?ref=ig (Instagram) o ?ref=tt (TikTok). Una vez por sesión.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("tc_v")) return;
+      sessionStorage.setItem("tc_v", "1");
+    } catch {}
+    let ref = null;
+    try { ref = new URLSearchParams(window.location.search).get("ref"); } catch {}
+    trackInterest("visit");
+    if (ref === "ig") trackInterest("visit_ig");
+    else if (ref === "tt") trackInterest("visit_tt");
+  }, []);
+
   const goPro = () => { setTab("pro"); trackInterest("open_pro"); };
 
   return (
