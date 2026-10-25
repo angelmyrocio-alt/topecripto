@@ -14,12 +14,21 @@
 //   src/sn  → enlace a la fuente y nombre del medio
 //   src2/sn2 → (opcional) segunda fuente
 //
-// Orden: primero las fallidas (de la más reciente a la más antigua), luego las que siguen en curso.
+// Orden: fallidas, cumplidas y en curso; dentro de cada grupo, de la más reciente a la más antigua.
+// Cuando vence una EN CURSO: cambia st, quita target, escribe p con lo que pasó y actualiza res.
 
 export const ST_COLOR = { FALLIDA: "#ff2d2d", "EN CURSO": "#ffb02e", CUMPLIDA: "#35c759" };
 
 export const CASES = [
   // ---------- FALLIDAS ----------
+  {
+    id: "bernstein-bitcoin-200000-2025",
+    who: "Bernstein", coin: "BTC", claim: "200.000 $ a finales de 2025", st: "FALLIDA",
+    p: "Subió su objetivo desde 150.000 $ en junio de 2024. Bitcoin cerró 2025 en unos 88.000 $.",
+    res: "Bitcoin cerró 2025 en unos 88.000 $",
+    src: "https://www.theblock.co/post/300138/bernstein-bitcoin-price-target-2025", sn: "The Block",
+    src2: "https://bitcoinmagazine.com/featured/bitcoin-limps-into-new-year-at-87000", sn2: "Bitcoin Magazine",
+  },
   {
     id: "sc-bitcoin-200000-2025",
     who: "Standard Chartered", coin: "BTC", claim: "200.000 $ a finales de 2025", st: "FALLIDA",
@@ -68,6 +77,14 @@ export const CASES = [
     src2: "https://cryptoticker.io/en/crypto-recap-2025/", sn2: "CryptoTicker",
   },
   {
+    id: "draper-bitcoin-120000-2024",
+    who: "Tim Draper", coin: "BTC", claim: "120.000 $ a finales de 2024", st: "FALLIDA",
+    p: "Lo dijo en noviembre de 2024. El máximo de Bitcoin en 2024 fue de unos 108.000 $, el 17 de diciembre, y cerró el año en unos 93.400 $.",
+    res: "Bitcoin cerró 2024 en unos 93.400 $",
+    src: "https://www.benzinga.com/markets/cryptocurrency/24/11/42198722/exclusive-tim-draper-predicts-bitcoin-to-reach-120k-by-end-of-2024-250k-in-2025", sn: "Benzinga",
+    src2: "https://dqydj.com/2024-bitcoin-return/", sn2: "DQYDJ",
+  },
+  {
     id: "draper-bitcoin-250000",
     who: "Tim Draper", coin: "BTC", claim: "250.000 $ a finales de 2022", st: "FALLIDA",
     p: "Lo dijo en abril de 2018. Bitcoin cerró 2022 alrededor de 16.500 $, tras la caída de FTX.",
@@ -98,7 +115,46 @@ export const CASES = [
     src2: "https://www.bloomberg.com/news/articles/2020-03-31/bitcoin-s-march-plunge-is-worst-since-the-crypto-bubble-burst", sn2: "Bloomberg",
   },
 
+  // ---------- CUMPLIDAS ----------
+  {
+    id: "bernstein-bitcoin-90000-2024",
+    who: "Bernstein", coin: "BTC", claim: "90.000 $ a finales de 2024", st: "CUMPLIDA",
+    p: "Subió su objetivo desde 80.000 $ en marzo de 2024. Bitcoin cerró 2024 en unos 93.400 $.",
+    res: "Bitcoin cerró 2024 en unos 93.400 $",
+    src: "https://cryptodaily.co.uk/2024/03/bernstein-analysts-predict-bitcoin-could-hit-90000-by-year-end", sn: "CryptoDaily",
+    src2: "https://dqydj.com/2024-bitcoin-return/", sn2: "DQYDJ",
+  },
+  {
+    id: "sc-bitcoin-100000-2024",
+    who: "Standard Chartered", coin: "BTC", claim: "100.000 $ a finales de 2024", st: "CUMPLIDA",
+    p: "Lo dijo Geoff Kendrick en abril de 2023, con Bitcoin en unos 27.600 $. Superó los 100.000 $ el 5 de diciembre de 2024 y llegó a unos 108.000 $, aunque cerró el año en unos 93.400 $.",
+    res: "Superó los 100.000 $ el 5 de diciembre de 2024",
+    src: "https://www.cnbc.com/2023/04/24/bitcoin-btc-price-could-hit-100000-by-end-2024-standard-chartered.html", sn: "CNBC",
+    src2: "https://dqydj.com/2024-bitcoin-return/", sn2: "DQYDJ",
+  },
+  {
+    id: "draper-bitcoin-10000-2017",
+    who: "Tim Draper", coin: "BTC", claim: "10.000 $ en tres años", st: "CUMPLIDA",
+    p: "Lo dijo en septiembre de 2014, con Bitcoin en unos 413 $. Llegó a 10.000 $ en noviembre de 2017.",
+    res: "Llegó a 10.000 $ en noviembre de 2017",
+    src: "https://benzinga.com/z/22739640", sn: "Benzinga",
+  },
+
   // ---------- EN CURSO ----------
+  {
+    id: "cryptobull-xrp-27-2026",
+    who: "CryptoBull", coin: "XRP", claim: "27 $ a finales de octubre de 2026", st: "EN CURSO", target: 27,
+    extra: "Lo dijo en agosto de 2026 este analista con cerca de un millón de seguidores en X, con XRP en unos 1,03 $. Vence el 31 de octubre de 2026.",
+    res: "Vence el 31 de octubre de 2026",
+    src: "https://finance.yahoo.com/markets/crypto/articles/xrp-price-prediction-analyst-says-125742956.html", sn: "Yahoo Finance",
+  },
+  {
+    id: "sc-bitcoin-300000-2026",
+    who: "Standard Chartered", coin: "BTC", claim: "300.000 $ a finales de 2026", st: "EN CURSO", target: 300000,
+    extra: "El propio banco lo rebajó a 150.000 $ en diciembre de 2025 y a 100.000 $ en febrero de 2026.",
+    res: "El banco ya lo rebajó dos veces: ahora 100.000 $",
+    src: "https://www.theblock.co/post/389609/standard-chartered-bitcoin-50000-ether-1400-rebound", sn: "The Block",
+  },
   {
     id: "sc-xrp-8-2026",
     who: "Standard Chartered", coin: "XRP", claim: "8 $ a finales de 2026", st: "EN CURSO", target: 8,

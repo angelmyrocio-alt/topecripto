@@ -66,6 +66,6 @@ async function shot(html, name) {
 
 for (const k of CASES) await shot(caseCard(k), `${k.id}.png`);
 await shot(plainCard("¿Ese precio que te prometen<br>es posible?", "Mídelo contra el dinero que existe de verdad.", "Sin hype, solo números"), "portada.png");
-await shot(plainCard("Quién prometió qué", `${CASES.length} predicciones cripto con fecha, fuente<br>y lo que pasó de verdad.`, "Bitcoin · Ethereum · XRP · Solana"), "promesas.png");
+await shot(plainCard("Quién prometió qué", `${CASES.length} predicciones cripto con fecha y fuente:<br>las que fallaron y las que acertaron.`, "Bitcoin · Ethereum · XRP · Solana"), "promesas.png");
 await browser.close();
 console.log(`og: ${CASES.length} promesas + portada + promesas en public/og/`);

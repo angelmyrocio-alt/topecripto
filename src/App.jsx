@@ -353,7 +353,12 @@ function Promises({ coins, total, focus }) {
 
   return (
     <section className="stack">
-      <div><h2 className="sec">Quién prometió qué</h2><p className="lead">Predicciones públicas, con fecha, y lo que pasó de verdad.</p></div>
+      <div><h2 className="sec">Quién prometió qué</h2><p className="lead">Predicciones públicas, con fecha, y lo que pasó de verdad. Las que fallaron y las que acertaron.</p></div>
+      <div className="tally">
+        {["FALLIDA", "CUMPLIDA", "EN CURSO"].map((s) => (
+          <span key={s}><b style={{ color: ST_COLOR[s] }}>{CASES.filter((k) => k.st === s).length}</b> {s === "FALLIDA" ? "fallidas" : s === "CUMPLIDA" ? "cumplidas" : "en curso"}</span>
+        ))}
+      </div>
       {CASES.map((k) => {
         let p = k.p;
         if (k.target) {
@@ -518,6 +523,8 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .case p{margin:0;font-size:12px;color:#8891a8;line-height:1.45}
 .case a{color:#8891a8;font-size:10.5px}
 .case.focus{border-color:#ffd35a;box-shadow:0 0 0 1px #ffd35a33}
+.tally{display:flex;justify-content:space-between;gap:6px;background:#0b0f15;border:1px solid #1c232d;border-radius:12px;padding:10px 12px;font-size:12px;color:#8891a8}
+.tally b{font:700 20px 'Rajdhani',sans-serif;margin-right:3px}
 .cfoot{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .srcs{display:flex;flex-wrap:wrap;gap:4px 10px;min-width:0}
 .clink{font:700 11px 'Chakra Petch',sans-serif;color:#ff5b5b;background:#160d0f;border:1px solid #7a2020;border-radius:8px;padding:6px 10px;cursor:pointer;flex-shrink:0}

@@ -78,7 +78,7 @@ page({
   path: "/promesas",
   image: ogImage("promesas"),
   title: "Quién prometió qué: predicciones cripto con fecha y resultado | Topecripto",
-  description: cut(`Predicciones públicas de precios cripto, con fecha, fuente y lo que pasó de verdad. ${CASES.length} casos.`, 160),
+  description: cut(`Predicciones públicas de precios cripto, con fecha, fuente y lo que pasó de verdad: ${CASES.filter((k) => k.st === "FALLIDA").length} fallidas, ${CASES.filter((k) => k.st === "CUMPLIDA").length} cumplidas y ${CASES.filter((k) => k.st === "EN CURSO").length} en curso.`, 160),
   body: pre(`<h1 style="color:#fff;margin:0 0 6px">Quién prometió qué</h1><p style="margin:0 0 18px">Predicciones públicas, con fecha, y lo que pasó de verdad.</p>`
     + CASES.map((k) => caseBlock(k, "h2").replace(/<h2 /, `<h2 id="${k.id}" `)).join("\n")),
 });
