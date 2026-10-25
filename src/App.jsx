@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
+import { CASES, ST_COLOR } from "./promesas.js";
 
 // ===== Datos de reserva (CoinGecko, 26/09/2026). Se sustituyen por los datos en vivo de /api/prices =====
 const FALLBACK_TOTAL = 2.974e12;
@@ -156,7 +157,7 @@ export default function App() {
 
         {tab === "diag" && <Diag coins={coins} total={total} />}
         {tab === "zeros" && <Zeros coins={coins} total={total} />}
-        {tab === "hist" && <Promises coins={coins} total={total} onPro={goPro} />}
+        {tab === "hist" && <Promises coins={coins} total={total} />}
         {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
         <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
@@ -303,19 +304,8 @@ function Zeros({ coins, total }) {
   );
 }
 
-// ===== QUIÉN PROMETIÓ QUÉ (3 casos gratis; el historial completo, en Pro) =====
-const CASES = [
-  { who: "John McAfee", coin: "BTC", claim: "1.000.000 $ a finales de 2020", st: "FALLIDA", c: "#ff2d2d",
-    p: "Lo prometió en 2017. Bitcoin cerró 2020 alrededor de 29.000 $. En enero de 2020 él mismo dijo que la cifra era «una treta».",
-    src: "https://www.forbes.com/sites/billybambrough/2020/01/06/one-of-the-biggest-bets-in-bitcoin-revealed-to-be-a-ruse/", sn: "Forbes" },
-  { who: "Tim Draper", coin: "BTC", claim: "250.000 $ a finales de 2022", st: "FALLIDA", c: "#ff2d2d",
-    p: "Lo dijo en abril de 2018. Bitcoin cerró 2022 alrededor de 16.500 $, tras la caída de FTX.",
-    src: "https://www.cnbc.com/2018/04/13/tech-investor-tim-draper-predicts-bitcoin-will-reach-250000-by-2022.html", sn: "CNBC" },
-  { who: "Vincent Van Code", coin: "XRP", claim: "500 $ entre 2032 y 2035", st: "EN CURSO", c: "#ffb02e", target: 500,
-    src: "https://www.tradingview.com/news/newsbtc:1d7b67119094b:0-pundit-predicts-when-xrp-price-will-hit-500-and-what-will-drive-the-rally/", sn: "NewsBTC" },
-];
-
-function Promises({ coins, total, onPro }) {
+// ===== QUIÉN PROMETIÓ QUÉ (todo gratis; los casos viven en src/promesas.js) =====
+function Promises({ coins, total }) {
   return (
     <section className="stack">
       <div><h2 className="sec">Quién prometió qué</h2><p className="lead">Predicciones públicas, con fecha, y lo que pasó de verdad.</p></div>
@@ -326,21 +316,14 @@ function Promises({ coins, total, onPro }) {
           if (x) { const cap = k.target * x.supply; p = `Hoy ${k.coin} vale ${fmtPrice(x.price)}. A ${fmtPrice(k.target)} valdría ${fmtCap(cap)}: ${esNum(cap / total, 1)} veces todo el cripto actual.`; }
         }
         return (
-          <div className="case" key={k.who}>
-            <div className="who"><b>{k.who} · {k.coin}</b><span className="t" style={{ background: k.c }}>{k.st}</span></div>
+          <div className="case" key={k.id} id={k.id}>
+            <div className="who"><b>{k.who} · {k.coin}</b><span className="t" style={{ background: ST_COLOR[k.st] }}>{k.st}</span></div>
             <div className="claim">{k.claim}</div>
             <p>{p}</p>
             <a href={k.src} target="_blank" rel="noopener noreferrer">Fuente: {k.sn}</a>
           </div>
         );
       })}
-      <div className="locked">
-        <div className="preview">
-          <div className="row"><b>ETH</b><span className="p">???</span><span className="m">predicción de 2021</span><span className="t" style={{ background: "#ff2d2d" }}>FALLIDA</span></div>
-          <div className="row"><b>SOL</b><span className="p">???</span><span className="m">predicción de 2024</span><span className="t" style={{ background: "#ffb02e" }}>EN CURSO</span></div>
-        </div>
-        <div className="overlay"><strong>Historial completo en Pro</strong><button className="gold" type="button" onClick={onPro}>Ver Topecripto Pro</button></div>
-      </div>
     </section>
   );
 }
@@ -370,7 +353,7 @@ function Pro({ coins, total, unlocked, onBack }) {
         <ul>
           <li>Detector de tablas de influencers</li>
           <li>Watchlist con alertas de veredicto</li>
-          <li>«Quién prometió qué» completo, con avisos de nuevos casos</li>
+          <li>Avisos cuando entra un caso nuevo en «Quién prometió qué» o se resuelve uno en curso</li>
           <li>Todas las monedas, no solo las principales</li>
         </ul>
         <div className="stack">
@@ -387,7 +370,7 @@ function Pro({ coins, total, unlocked, onBack }) {
       </div>
       <div className="plan planFree">
         <div className="head"><span className="name">Gratis</span><span className="price">0 €</span></div>
-        <ul className="free"><li>Diagnóstico de cualquier predicción</li><li>El juego de los ceros</li><li>3 casos de «Quién prometió qué»</li><li>Compartir el veredicto</li></ul>
+        <ul className="free"><li>Diagnóstico de cualquier predicción</li><li>El juego de los ceros</li><li>Todo «Quién prometió qué»</li><li>Compartir el veredicto</li></ul>
       </div>
       <p className="note">Pro aún no está abierto y no se cobra nada.</p>
       <button className="ghost" type="button" onClick={onBack}>← Volver al diagnóstico</button>
