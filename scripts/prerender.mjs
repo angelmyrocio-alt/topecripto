@@ -3,7 +3,7 @@
 // el sitemap.xml y el robots.txt. Así Google lee el texto sin tener que ejecutar React.
 // Cuando el visitante entra, React toma el control y la app funciona igual que siempre.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { CASES } from "../src/promesas.js";
 
 const SITE = "https://www.topecripto.com";
@@ -27,15 +27,20 @@ function swap(html, re, value, what) {
   return html.replace(re, value);
 }
 
-function page({ path, title, description, type = "website", body }) {
+// Imagen al compartir: la de la página si existe en public/og/, si no la portada
+const ogImage = (name) =>
+  SITE + "/og/" + (existsSync(new URL(`../public/og/${name}.png`, import.meta.url)) ? name : "portada") + ".png";
+
+function page({ path, title, description, type = "website", image, body }) {
   const url = SITE + path;
   let html = template;
+  html = swap(html, /<meta property="og:image" [^>]*>/, `<meta property="og:image" content="${image}" />`, "og:image");
   html = swap(html, /<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`, "<title>");
   html = swap(html, /<meta name="description"[^>]*>/, `<meta name="description" content="${esc(description)}" />`, "meta description");
   html = swap(html, /<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${esc(title)}" />`, "og:title");
   html = swap(html, /<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${esc(description)}" />`, "og:description");
   html = swap(html, /<meta property="og:type"[^>]*>/,
-    `<meta property="og:type" content="${type}" />\n    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />\n    <meta name="twitter:card" content="summary" />`,
+    `<meta property="og:type" content="${type}" />\n    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />`,
     "og:type");
   html = swap(html, /<div id="root"><\/div>/, `<div id="root">${body}</div>`, '<div id="root">');
   const dir = new URL("." + path + "/", DIST);
@@ -61,6 +66,7 @@ for (const k of CASES) {
   page({
     path: "/promesas/" + k.id,
     type: "article",
+    image: ogImage(k.id),
     title: cut(`${k.who}: ${coinName(k.coin)} a ${k.claim} · ${k.st} | Topecripto`, 90),
     description: cut(caseText(k), 160),
     body: pre(caseBlock(k, "h1") + `<p><a style="color:#ffd35a" href="/promesas">Ver todas las promesas</a> · <a style="color:#ffd35a" href="/">Comprobar otra predicción</a></p>`),
@@ -70,6 +76,7 @@ for (const k of CASES) {
 // 2) La lista completa
 page({
   path: "/promesas",
+  image: ogImage("promesas"),
   title: "Quién prometió qué: predicciones cripto con fecha y resultado | Topecripto",
   description: cut(`Predicciones públicas de precios cripto, con fecha, fuente y lo que pasó de verdad. ${CASES.length} casos.`, 160),
   body: pre(`<h1 style="color:#fff;margin:0 0 6px">Quién prometió qué</h1><p style="margin:0 0 18px">Predicciones públicas, con fecha, y lo que pasó de verdad.</p>`
