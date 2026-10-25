@@ -200,7 +200,7 @@ function initialCoin(coins) {
     const i = coins.findIndex((c) => c.sym === h);
     if (i >= 0) return i;
   } catch {}
-  const x = coins.findIndex((c) => c.sym === "XRP");
+  const x = coins.findIndex((c) => c.sym === "BTC");
   return x >= 0 ? x : 0;
 }
 
@@ -386,7 +386,7 @@ function Promises({ coins, total, focus }) {
 
 // ===== PRO (plan único) =====
 function Pro({ coins, total, unlocked, onBack }) {
-  const sample = [["XRP", 100], ["SOL", 1000], ["DOGE", 10], ["SHIB", 1], ["PEPE", 0.01]];
+  const sample = [["BTC", 1000000], ["SOL", 1000], ["DOGE", 10], ["SHIB", 1], ["PEPE", 0.01]];
   const rows = sample.map(([s, t]) => {
     const c = coins.find((x) => x.sym === s); if (!c) return null;
     const cap = t * c.supply, z = zone(cap, total);
@@ -436,7 +436,7 @@ function Pro({ coins, total, unlocked, onBack }) {
 
 // Detector (solo con acceso completo)
 function Detector({ coins, total }) {
-  const [txt, setTxt] = useState("XRP 100\nSOL 1000\nDOGE 10\nSHIB 1\nPEPE 0,01");
+  const [txt, setTxt] = useState("BTC 1.000.000\nSOL 1000\nDOGE 10\nSHIB 1\nPEPE 0,01");
   const [rows, setRows] = useState(null);
   const run = () => setRows(txt.split("\n").map((ln) => {
     const sm = ln.match(/[A-Za-z]{2,6}/), nm = ln.match(/[\d.,]+/g);
