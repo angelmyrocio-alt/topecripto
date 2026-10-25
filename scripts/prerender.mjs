@@ -17,7 +17,8 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const cut = (s, n) => (s.length <= n ? s : s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…");
 const coinName = (sym) => NAMES[sym] || sym;
 const caseText = (k) =>
-  k.p || `Predicción en curso. Entra para ver, con el precio de hoy, cuánto dinero haría falta para que ${coinName(k.coin)} llegue a esa cifra.`;
+  (k.p || `Predicción en curso. Entra para ver, con el precio de hoy, cuánto dinero haría falta para que ${coinName(k.coin)} llegue a esa cifra.`)
+  + (k.extra ? " " + k.extra : "");
 
 const template = readFileSync(new URL("index.html", DIST), "utf8");
 
@@ -51,7 +52,7 @@ function caseBlock(k, h) {
   return `<${h} style="color:#fff;margin:0 0 6px">${esc(k.who)} · ${esc(coinName(k.coin))}: ${esc(k.claim)}</${h}>
 <p style="margin:0 0 6px"><strong style="color:${statusColor[k.st] || "#fff"}">${esc(k.st)}</strong></p>
 <p style="margin:0 0 6px">${esc(caseText(k))}</p>
-<p style="margin:0 0 18px"><a style="color:#8891a8" href="${esc(k.src)}" rel="noopener noreferrer">Fuente: ${esc(k.sn)}</a></p>`;
+<p style="margin:0 0 18px"><a style="color:#8891a8" href="${esc(k.src)}" rel="noopener noreferrer">Fuente: ${esc(k.sn)}</a>${k.src2 ? ` · <a style="color:#8891a8" href="${esc(k.src2)}" rel="noopener noreferrer">${esc(k.sn2)}</a>` : ""}</p>`;
 }
 
 // 1) Una página por promesa

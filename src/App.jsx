@@ -364,9 +364,12 @@ function Promises({ coins, total, focus }) {
           <div className={"case" + (focus === k.id ? " focus" : "")} key={k.id} id={k.id}>
             <div className="who"><b>{k.who} · {k.coin}</b><span className="t" style={{ background: ST_COLOR[k.st] }}>{k.st}</span></div>
             <div className="claim">{k.claim}</div>
-            <p>{p}</p>
+            <p>{p}{k.extra ? " " + k.extra : ""}</p>
             <div className="cfoot">
-              <a href={k.src} target="_blank" rel="noopener noreferrer">Fuente: {k.sn}</a>
+              <span className="srcs">
+                <a href={k.src} target="_blank" rel="noopener noreferrer">Fuente: {k.sn}</a>
+                {k.src2 && <a href={k.src2} target="_blank" rel="noopener noreferrer">{k.sn2}</a>}
+              </span>
               <button type="button" className="clink" onClick={() => shareCase(k, `${k.who} prometió ${k.coin} a ${k.claim}. ${k.st}.`)}>{copied === k.id ? "Enlace copiado ✓" : "↗ Compartir"}</button>
             </div>
           </div>
@@ -516,6 +519,7 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .case a{color:#8891a8;font-size:10.5px}
 .case.focus{border-color:#ffd35a;box-shadow:0 0 0 1px #ffd35a33}
 .cfoot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.srcs{display:flex;flex-wrap:wrap;gap:4px 10px;min-width:0}
 .clink{font:700 11px 'Chakra Petch',sans-serif;color:#ff5b5b;background:#160d0f;border:1px solid #7a2020;border-radius:8px;padding:6px 10px;cursor:pointer;flex-shrink:0}
 .locked{position:relative;border-radius:14px;overflow:hidden;border:1px solid #1c232d}
 .locked .preview{filter:blur(3px);opacity:.45;padding:12px;display:grid;gap:6px;pointer-events:none}
