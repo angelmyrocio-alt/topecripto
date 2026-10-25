@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/ceros", "destination": "/index.html" },
+    { "source": "/pro", "destination": "/index.html" },
+    { "source": "/promesas", "destination": "/promesas/index.html" },
+    { "source": "/promesas/:id", "destination": "/index.html" }
+  ]
+}

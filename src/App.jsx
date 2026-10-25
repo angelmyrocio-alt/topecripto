@@ -71,12 +71,39 @@ function trackInterest(name) {
   } catch { /* sin ruido */ }
 }
 
+// ===== Direcciones: cada pestaña y cada promesa tiene su URL =====
+// /  ·  /ceros  ·  /promesas  ·  /promesas/<id>  ·  /pro
+const TAB_PATH = { diag: "/", zeros: "/ceros", hist: "/promesas", pro: "/pro" };
+function readPath() {
+  let path = "/";
+  try { path = window.location.pathname.replace(/\/+$/, "") || "/"; } catch {}
+  const m = path.match(/^\/promesas\/([a-z0-9-]+)$/);
+  if (m) return { tab: "hist", focus: m[1] };
+  const tab = Object.keys(TAB_PATH).find((k) => TAB_PATH[k] === path) || "diag";
+  return { tab, focus: null };
+}
+function writePath(path) {
+  try {
+    if (window.location.pathname === path) return;
+    window.history.pushState(null, "", path + window.location.search);
+  } catch {}
+}
+
 export default function App() {
   const [coins, setCoins] = useState(BASE);
   const [total, setTotal] = useState(FALLBACK_TOTAL);
   const [live, setLive] = useState(false);
-  const [tab, setTab] = useState("diag");
+  const [route, setRoute] = useState(readPath);
+  const tab = route.tab;
+  const setTab = (k) => { setRoute({ tab: k, focus: null }); writePath(TAB_PATH[k]); };
   const [unlocked, setUnlocked] = useState(false);
+
+  // Botones atrás/adelante del navegador
+  useEffect(() => {
+    const onPop = () => setRoute(readPath());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Precios en vivo (la clave de CoinGecko vive en el servidor)
   useEffect(() => {
@@ -157,7 +184,7 @@ export default function App() {
 
         {tab === "diag" && <Diag coins={coins} total={total} />}
         {tab === "zeros" && <Zeros coins={coins} total={total} />}
-        {tab === "hist" && <Promises coins={coins} total={total} />}
+        {tab === "hist" && <Promises coins={coins} total={total} focus={route.focus} />}
         {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
         <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
@@ -305,7 +332,25 @@ function Zeros({ coins, total }) {
 }
 
 // ===== QUIÉN PROMETIÓ QUÉ (todo gratis; los casos viven en src/promesas.js) =====
-function Promises({ coins, total }) {
+function Promises({ coins, total, focus }) {
+  const [copied, setCopied] = useState(null);
+
+  // Si se entra por /promesas/<id>, baja hasta ese caso
+  useEffect(() => {
+    if (!focus) return;
+    const el = document.getElementById(focus);
+    if (el) el.scrollIntoView({ block: "center" });
+  }, [focus]);
+
+  const shareCase = async (k, text) => {
+    const url = "https://www.topecripto.com/promesas/" + k.id;
+    trackInterest("share_case");
+    try {
+      if (navigator.share) { await navigator.share({ title: `${k.who} · ${k.coin}: ${k.claim}`, text, url }); return; }
+    } catch { return; /* el usuario canceló */ }
+    try { await navigator.clipboard.writeText(url); setCopied(k.id); setTimeout(() => setCopied(null), 2000); } catch {}
+  };
+
   return (
     <section className="stack">
       <div><h2 className="sec">Quién prometió qué</h2><p className="lead">Predicciones públicas, con fecha, y lo que pasó de verdad.</p></div>
@@ -316,11 +361,14 @@ function Promises({ coins, total }) {
           if (x) { const cap = k.target * x.supply; p = `Hoy ${k.coin} vale ${fmtPrice(x.price)}. A ${fmtPrice(k.target)} valdría ${fmtCap(cap)}: ${esNum(cap / total, 1)} veces todo el cripto actual.`; }
         }
         return (
-          <div className="case" key={k.id} id={k.id}>
+          <div className={"case" + (focus === k.id ? " focus" : "")} key={k.id} id={k.id}>
             <div className="who"><b>{k.who} · {k.coin}</b><span className="t" style={{ background: ST_COLOR[k.st] }}>{k.st}</span></div>
             <div className="claim">{k.claim}</div>
             <p>{p}</p>
-            <a href={k.src} target="_blank" rel="noopener noreferrer">Fuente: {k.sn}</a>
+            <div className="cfoot">
+              <a href={k.src} target="_blank" rel="noopener noreferrer">Fuente: {k.sn}</a>
+              <button type="button" className="clink" onClick={() => shareCase(k, `${k.who} prometió ${k.coin} a ${k.claim}. ${k.st}.`)}>{copied === k.id ? "Enlace copiado ✓" : "↗ Compartir"}</button>
+            </div>
           </div>
         );
       })}
@@ -466,6 +514,9 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .case .claim{font:700 19px 'Rajdhani',sans-serif;color:#fff}
 .case p{margin:0;font-size:12px;color:#8891a8;line-height:1.45}
 .case a{color:#8891a8;font-size:10.5px}
+.case.focus{border-color:#ffd35a;box-shadow:0 0 0 1px #ffd35a33}
+.cfoot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.clink{font:700 11px 'Chakra Petch',sans-serif;color:#ff5b5b;background:#160d0f;border:1px solid #7a2020;border-radius:8px;padding:6px 10px;cursor:pointer;flex-shrink:0}
 .locked{position:relative;border-radius:14px;overflow:hidden;border:1px solid #1c232d}
 .locked .preview{filter:blur(3px);opacity:.45;padding:12px;display:grid;gap:6px;pointer-events:none}
 .row{display:flex;align-items:center;gap:8px;background:#0b0f15;border:1px solid #1c232d;border-radius:9px;padding:9px 11px;font-size:12px}
