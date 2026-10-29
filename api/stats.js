@@ -9,6 +9,7 @@ const EVENTS = [
   ["follow_instagram", "Clics en seguir Instagram"],
   ["zeros_play", "Partidas al juego de los ceros"],
   ["share", "Veredictos compartidos"],
+  ["share_case", "Promesas compartidas"],
   // Versión anterior (se conservan para ver el histórico)
   ["founder_reserve", "Antes: reservas Fundador"],
   ["interest_pro", "Antes: interesados en Pro"],

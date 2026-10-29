@@ -1,5 +1,5 @@
 // Panel privado de claves de acceso. Abrir con: /api/keys?key=TU_STATS_KEY
-// Generar una clave nueva: /api/keys?key=TU_STATS_KEY&new=1  (o el botón de la página)
+// Generar una clave nueva: el botón de la página (envía un POST; abrir un enlace ya no crea claves)
 import crypto from "crypto";
 
 async function redis(cmd) {
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   let justCreated = null;
 
   try {
-    if (q.new) {
+    if (req.method === "POST") {
       const code = newCode();
       const days = Math.max(1, parseInt(q.days || "7", 10) || 7);
       const note = String(q.note || "").slice(0, 60);
@@ -76,7 +76,7 @@ body{margin:0;background:#05070a;color:#e9f0f7;font-family:system-ui,sans-serif;
 .card{width:100%;max-width:640px}
 h1{font-size:18px;margin:0 0 2px}
 .sub{font-size:12px;color:#7b8696;margin:0 0 14px}
-.btn{display:inline-block;background:linear-gradient(180deg,#ffd35a,#e0a92e);color:#0b0e13;font-weight:700;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:14px}
+.btn{display:inline-block;border:0;cursor:pointer;font-family:inherit;background:linear-gradient(180deg,#ffd35a,#e0a92e);color:#0b0e13;font-weight:700;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:14px}
 .created{margin:14px 0;padding:12px;border:1px solid #4a3d15;border-radius:10px;background:#0b0f15;font-size:13px;line-height:1.6}
 table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
 th,td{text-align:left;padding:9px 6px;border-bottom:1px solid #141a22}
@@ -89,7 +89,7 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 </style></head><body><div class="card">
 <h1>Topecripto · Claves de acceso</h1>
 <p class="sub">Cada clave da 7 días de acceso completo a Pro, contados desde el primer uso. Validadas en el servidor.</p>
-<a class="btn" href="${base}/api/keys?key=${encodeURIComponent(secret)}&new=1">+ Generar clave nueva (7 días)</a>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}"><button class="btn" type="submit">+ Generar clave nueva (7 días)</button></form>
 ${created}
 ${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
 </div></body></html>`);

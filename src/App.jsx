@@ -3,6 +3,7 @@ import { track } from "@vercel/analytics";
 import { CASES, ST_COLOR } from "./promesas.js";
 
 // ===== Datos de reserva (CoinGecko, 26/09/2026). Se sustituyen por los datos en vivo de /api/prices =====
+const FALLBACK_DATE = "26/09/2026";
 const FALLBACK_TOTAL = 2.974e12;
 const BASE = [
   { sym: "BTC",  name: "Bitcoin",     price: 83838,       supply: 20.08e6,    absurd: 1000000 },
@@ -93,6 +94,7 @@ export default function App() {
   const [coins, setCoins] = useState(BASE);
   const [total, setTotal] = useState(FALLBACK_TOTAL);
   const [live, setLive] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [route, setRoute] = useState(readPath);
   const tab = route.tab;
   const setTab = (k) => { setRoute({ tab: k, focus: null }); writePath(TAB_PATH[k]); };
@@ -111,13 +113,14 @@ export default function App() {
     const load = async () => {
       try {
         const r = await fetch("/api/prices");
-        if (!r.ok) return;
-        const d = await r.json();
-        if (!alive || !d.coins || !d.coins.length) return;
+        const d = r.ok ? await r.json() : null;
+        if (!alive) return;
+        if (!d || !d.coins || !d.coins.length) { setFailed(true); return; }
         if (d.totalCrypto > 0) setTotal(d.totalCrypto);
         setCoins(d.coins);
         setLive(true);
-      } catch { /* se queda con los datos de reserva */ }
+        setFailed(false);
+      } catch { if (alive) setFailed(true); /* se queda con los datos de reserva */ }
     };
     load();
     const id = setInterval(load, 60000);
@@ -162,7 +165,7 @@ export default function App() {
         <div className="top">
           <div>
             <div className="brand">TOPE<b>CRIPTO</b></div>
-            <div className="live"><i style={{ background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : "cargando…"}</div>
+            <div className="live"><i style={{ background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : failed ? "SIN CONEXIÓN" : "cargando…"}</div>
           </div>
           <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · 3 €/mes"}</button>
         </div>
@@ -187,19 +190,17 @@ export default function App() {
         {tab === "hist" && <Promises coins={coins} total={total} focus={route.focus} />}
         {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
-        <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
+        <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : failed ? `Precios de reserva del ${FALLBACK_DATE}` : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
       </main>
     </div>
   );
 }
 
 // ===== DIAGNÓSTICO (gratis) =====
+const hashSym = () => { try { return (window.location.hash || "").slice(1).toUpperCase(); } catch { return ""; } };
 function initialCoin(coins) {
-  try {
-    const h = (window.location.hash || "").slice(1).toUpperCase();
-    const i = coins.findIndex((c) => c.sym === h);
-    if (i >= 0) return i;
-  } catch {}
+  const i = coins.findIndex((c) => c.sym === hashSym());
+  if (i >= 0) return i;
   const x = coins.findIndex((c) => c.sym === "BTC");
   return x >= 0 ? x : 0;
 }
@@ -212,6 +213,19 @@ function Diag({ coins, total }) {
   const [copied, setCopied] = useState(false);
 
   const pick = (i) => { setCi(i); const p = coins[i].absurd; setPrice(p); setText(fmtInput(p)); };
+
+  // Si el enlace pide una moneda que solo viene con los datos en vivo, se elige al llegar
+  const hashDone = useRef(false);
+  useEffect(() => {
+    if (hashDone.current) return;
+    const h = hashSym();
+    if (!h) { hashDone.current = true; return; }
+    const i = coins.findIndex((c) => c.sym === h);
+    if (i < 0) return;
+    hashDone.current = true;
+    if (coins[ci] && coins[ci].sym === h) return;
+    pick(i);
+  }, [coins]);
   const range = [coin.price * 0.5, coin.price * Math.max(300, (coin.absurd / coin.price) * 3)];
   const sVal = Math.round((Math.log(price / range[0]) / Math.log(range[1] / range[0])) * 1000);
 
@@ -363,7 +377,9 @@ function Promises({ coins, total, focus }) {
         let p = k.p;
         if (k.target) {
           const x = coins.find((c) => c.sym === k.coin);
-          if (x) { const cap = k.target * x.supply; p = `Hoy ${k.coin} vale ${fmtPrice(x.price)}. A ${fmtPrice(k.target)} valdría ${fmtCap(cap)}: ${esNum(cap / total, 1)} veces todo el cripto actual.`; }
+          if (x) { const cap = k.target * x.supply; const r = cap / total;
+            const rel = r >= 1 ? `${esNum(r, 1)} veces todo el cripto actual` : `el ${esNum(r * 100, r < 0.1 ? 1 : 0)} % de todo el cripto actual`;
+            p = `Hoy ${k.coin} vale ${fmtPrice(x.price)}. A ${fmtPrice(k.target)} valdría ${fmtCap(cap)}: ${rel}.`; }
         }
         return (
           <div className={"case" + (focus === k.id ? " focus" : "")} key={k.id} id={k.id}>
@@ -550,7 +566,7 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .plan .free li::before{content:"✓";color:#35c759}
 .gold{width:100%;padding:13px 0;font:700 14px 'Chakra Petch',sans-serif;color:#0b0e13;background:linear-gradient(180deg,#ffd35a,#e0a92e);border:0;border-radius:12px;cursor:pointer}
 .flabel{margin:0;font-size:11.5px;color:#aab4c0}
-.finput{width:100%;background:#0b0f15;border:1px solid #2a323d;border-radius:10px;color:#e9f0f7;font-size:13px;padding:11px;outline:none;resize:vertical;line-height:1.6}
+.finput{width:100%;background:#0b0f15;border:1px solid #2a323d;border-radius:10px;color:#e9f0f7;font-size:16px;padding:11px;outline:none;resize:vertical;line-height:1.6}
 .social{display:grid;gap:8px}
 .sbtn{display:block;text-align:center;text-decoration:none}
 a.ghost.sbtn{color:#e9f0f7}

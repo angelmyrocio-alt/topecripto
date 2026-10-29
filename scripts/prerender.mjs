@@ -84,7 +84,7 @@ page({
 });
 
 // 3) sitemap.xml y robots.txt
-const urls = ["/", "/promesas", ...CASES.map((k) => "/promesas/" + k.id)];
+const urls = ["/", "/ceros", "/promesas", ...CASES.map((k) => "/promesas/" + k.id)];
 writeFileSync(new URL("sitemap.xml", DIST),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
   + urls.map((u) => `  <url><loc>${SITE}${u === "/" ? "/" : u}</loc></url>`).join("\n")
