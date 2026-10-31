@@ -1,0 +1,235 @@
+//@version=6
+// Tope · ¿Hasta dónde puede llegar? — v2
+// Con el historial real del propio activo calcula hasta dónde suele llegar
+// el precio en tres plazos, y la probabilidad de tocar un objetivo.
+// Funciona en cualquier activo y temporalidad. No es asesoramiento financiero.
+indicator("Tope · ¿Hasta dónde puede llegar?", shorttitle = "Tope", overlay = true, max_bars_back = 5000, max_lines_count = 50, max_labels_count = 50)
+
+// ───────── Ajustes ─────────
+grpP = "Plazos"
+unit     = input.string("Días de mercado", "Unidad del plazo", options = ["Días de mercado", "Velas"], group = grpP)
+p1       = input.float(1.0, "Plazo 1", minval = 1.0, group = grpP)
+p2       = input.float(5.0, "Plazo 2", minval = 1.0, group = grpP)
+p3       = input.float(20.0, "Plazo 3", minval = 1.0, group = grpP)
+lookback = input.int(2000, "Historial a analizar (velas)", minval = 200, maxval = 4000, group = grpP)
+pctMid   = input.float(50.0, "Tope probable (percentil)", minval = 1.0, maxval = 99.0, group = grpP)
+pctExt   = input.float(90.0, "Tope extremo (percentil)", minval = 1.0, maxval = 99.0, group = grpP)
+
+grpO = "Objetivo"
+target = input.float(0.0, "Precio objetivo (0 = no usar)", minval = 0.0, group = grpO)
+
+grpV = "Visual"
+linesOf = input.string("Plazo 1", "Dibujar en el gráfico los topes de", options = ["Plazo 1", "Plazo 2", "Plazo 3", "Ninguno"], group = grpV)
+posStr  = input.string("Arriba derecha", "Posición del panel", options = ["Arriba derecha", "Arriba izquierda", "Abajo derecha", "Abajo izquierda"], group = grpV)
+sizeStr = input.string("Normal", "Tamaño del panel", options = ["Pequeño", "Normal", "Grande"], group = grpV)
+dec     = input.int(1, "Decimales del precio", minval = 0, maxval = 5, group = grpV)
+
+grpA = "Alertas"
+stretchAlert = input.float(3.0, "Avisar si la tensión supera (en ATR)", minval = 0.5, group = grpA)
+
+// ───────── Colores ─────────
+cRed  = #ef4444
+cYel  = #eab308
+cOrg  = #f97316
+cGrn  = #22c55e
+cMut  = #949caa
+cDim  = #6b7280
+
+// ───────── Utilidades ─────────
+float tfSec = timeframe.in_seconds()
+
+toBars(float p) =>
+    int b = unit == "Velas" ? int(math.round(p)) : int(math.round(p * 86400.0 / tfSec))
+    math.max(1, math.min(b, 1000))
+
+plazoText(float p, int h) =>
+    unit == "Velas" ? str.tostring(h) + " velas" : str.tostring(p, "0.#") + (p == 1.0 ? " día" : " días")
+
+string FMT = dec == 0 ? "0" : "0." + str.repeat("0", dec)
+fmtP(float x) => na(x) ? "—" : str.tostring(x, FMT)
+
+pc(float[] a, float p) => array.size(a) > 0 ? array.percentile_linear_interpolation(a, p) : na
+
+probOf(float[] ups, float[] dns, float tgt, float c) =>
+    int hits = 0
+    int total = array.size(ups)
+    if tgt >= c
+        float need = tgt / c - 1.0
+        for v in ups
+            if v >= need
+                hits += 1
+    else
+        float need = 1.0 - tgt / c
+        for v in dns
+            if v >= need
+                hits += 1
+    total > 0 ? 100.0 * hits / total : na
+
+verdict(float p) =>
+    na(p) ? "—" : p >= 50 ? "PROBABLE" : p >= 20 ? "POSIBLE" : p >= 5 ? "DIFÍCIL" : "IMPROBABLE"
+
+verdictColor(float p) =>
+    na(p) ? cMut : p >= 50 ? cGrn : p >= 20 ? cYel : p >= 5 ? cOrg : cRed
+
+stretchText(float z) =>
+    z >= 3 ? "MUY ESTIRADO ↑" : z >= 1.5 ? "Estirado ↑" : z <= -3 ? "MUY ESTIRADO ↓" : z <= -1.5 ? "Estirado ↓" : "Normal"
+
+stretchColor(float z) =>
+    math.abs(z) >= 3 ? cRed : math.abs(z) >= 1.5 ? cOrg : cGrn
+
+posFrom(string s) =>
+    s == "Arriba izquierda" ? position.top_left : s == "Abajo derecha" ? position.bottom_right : s == "Abajo izquierda" ? position.bottom_left : position.top_right
+
+txtSize = sizeStr == "Pequeño" ? size.tiny : sizeStr == "Grande" ? size.normal : size.small
+bigSize = sizeStr == "Pequeño" ? size.small : sizeStr == "Grande" ? size.large : size.normal
+
+// ───────── Series base (todas las velas) ─────────
+int h1 = toBars(p1)
+int h2 = toBars(p2)
+int h3 = toBars(p3)
+
+float up1 = ta.highest(high, h1)
+float dn1 = ta.lowest(low, h1)
+float up2 = ta.highest(high, h2)
+float dn2 = ta.lowest(low, h2)
+float up3 = ta.highest(high, h3)
+float dn3 = ta.lowest(low, h3)
+
+float ema50   = ta.ema(close, 50)
+float atr14   = ta.atr(14)
+float stretch = atr14 > 0 ? (close - ema50) / atr14 : 0.0
+
+// ───────── Alertas fijas ─────────
+alertcondition(ta.crossover(math.abs(stretch), stretchAlert), "Tope: tensión extrema", "Tope: el precio está muy estirado respecto a su media")
+bool hitTarget = ta.cross(close, target)
+alertcondition(target > 0 and hitTarget, "Tope: objetivo tocado", "Tope: el precio ha tocado tu precio objetivo")
+
+var table tb  = table.new(posFrom(posStr), 6, 7, bgcolor = #0b0f17, border_width = 1, border_color = #1f2937)
+var line[]  lns = array.new<line>()
+var label[] lbs = array.new<label>()
+
+// ───────── Cálculo en la última vela ─────────
+if barstate.islast
+    // Plazo 1
+    float[] u1 = array.new<float>()
+    float[] d1 = array.new<float>()
+    int n1 = math.min(lookback, bar_index - 2 * h1 - 1, 4990 - h1)
+    if n1 > 50
+        for i = h1 to n1 + h1 - 1
+            float b = close[i]
+            if b > 0
+                array.push(u1, up1[i - h1] / b - 1.0)
+                array.push(d1, 1.0 - dn1[i - h1] / b)
+    // Plazo 2
+    float[] u2 = array.new<float>()
+    float[] d2 = array.new<float>()
+    int n2 = math.min(lookback, bar_index - 2 * h2 - 1, 4990 - h2)
+    if n2 > 50
+        for i = h2 to n2 + h2 - 1
+            float b = close[i]
+            if b > 0
+                array.push(u2, up2[i - h2] / b - 1.0)
+                array.push(d2, 1.0 - dn2[i - h2] / b)
+    // Plazo 3
+    float[] u3 = array.new<float>()
+    float[] d3 = array.new<float>()
+    int n3 = math.min(lookback, bar_index - 2 * h3 - 1, 4990 - h3)
+    if n3 > 50
+        for i = h3 to n3 + h3 - 1
+            float b = close[i]
+            if b > 0
+                array.push(u3, up3[i - h3] / b - 1.0)
+                array.push(d3, 1.0 - dn3[i - h3] / b)
+
+    // Niveles de cada plazo
+    float uM1 = close * (1 + pc(u1, pctMid))
+    float uE1 = close * (1 + pc(u1, pctExt))
+    float dM1 = close * (1 - pc(d1, pctMid))
+    float dE1 = close * (1 - pc(d1, pctExt))
+    float uM2 = close * (1 + pc(u2, pctMid))
+    float uE2 = close * (1 + pc(u2, pctExt))
+    float dM2 = close * (1 - pc(d2, pctMid))
+    float dE2 = close * (1 - pc(d2, pctExt))
+    float uM3 = close * (1 + pc(u3, pctMid))
+    float uE3 = close * (1 + pc(u3, pctExt))
+    float dM3 = close * (1 - pc(d3, pctMid))
+    float dE3 = close * (1 - pc(d3, pctExt))
+
+    float pr1 = target > 0 ? probOf(u1, d1, target, close) : na
+    float pr2 = target > 0 ? probOf(u2, d2, target, close) : na
+    float pr3 = target > 0 ? probOf(u3, d3, target, close) : na
+
+    // Alerta: movimiento extremo en el plazo 1
+    float upExt1 = pc(u1, pctExt)
+    float dnExt1 = pc(d1, pctExt)
+    if not na(upExt1) and close[h1] > 0
+        if up1 / close[h1] - 1.0 >= upExt1
+            alert("Tope: " + syminfo.ticker + " ha superado su tope extremo de " + plazoText(p1, h1), alert.freq_once_per_bar)
+        if 1.0 - dn1 / close[h1] >= dnExt1
+            alert("Tope: " + syminfo.ticker + " ha perforado su suelo extremo de " + plazoText(p1, h1), alert.freq_once_per_bar)
+
+    // Líneas del plazo elegido
+    for l in lns
+        line.delete(l)
+    array.clear(lns)
+    for lb in lbs
+        label.delete(lb)
+    array.clear(lbs)
+    if linesOf != "Ninguno"
+        int   hL  = linesOf == "Plazo 1" ? h1 : linesOf == "Plazo 2" ? h2 : h3
+        float pL  = linesOf == "Plazo 1" ? p1 : linesOf == "Plazo 2" ? p2 : p3
+        float lUE = linesOf == "Plazo 1" ? uE1 : linesOf == "Plazo 2" ? uE2 : uE3
+        float lUM = linesOf == "Plazo 1" ? uM1 : linesOf == "Plazo 2" ? uM2 : uM3
+        float lDM = linesOf == "Plazo 1" ? dM1 : linesOf == "Plazo 2" ? dM2 : dM3
+        float lDE = linesOf == "Plazo 1" ? dE1 : linesOf == "Plazo 2" ? dE2 : dE3
+        float lPr = linesOf == "Plazo 1" ? pr1 : linesOf == "Plazo 2" ? pr2 : pr3
+        string tag = " (" + plazoText(pL, hL) + ") "
+        int x2 = bar_index + hL
+        if not na(lUE)
+            array.push(lns, line.new(bar_index, lUE, x2, lUE, color = cRed, width = 2, style = line.style_dashed))
+            array.push(lns, line.new(bar_index, lUM, x2, lUM, color = cYel, width = 2))
+            array.push(lns, line.new(bar_index, lDM, x2, lDM, color = cYel, width = 2))
+            array.push(lns, line.new(bar_index, lDE, x2, lDE, color = cRed, width = 2, style = line.style_dashed))
+            array.push(lbs, label.new(x2, lUE, "Tope extremo" + tag + fmtP(lUE), style = label.style_label_left, color = color.new(cRed, 80), textcolor = cRed, size = txtSize))
+            array.push(lbs, label.new(x2, lUM, "Tope probable" + tag + fmtP(lUM), style = label.style_label_left, color = color.new(cYel, 80), textcolor = cYel, size = txtSize))
+            array.push(lbs, label.new(x2, lDM, "Suelo probable" + tag + fmtP(lDM), style = label.style_label_left, color = color.new(cYel, 80), textcolor = cYel, size = txtSize))
+            array.push(lbs, label.new(x2, lDE, "Suelo extremo" + tag + fmtP(lDE), style = label.style_label_left, color = color.new(cRed, 80), textcolor = cRed, size = txtSize))
+        if target > 0
+            array.push(lns, line.new(bar_index, target, x2, target, color = verdictColor(lPr), width = 3, style = line.style_dotted))
+            array.push(lbs, label.new(x2, target, "Objetivo " + fmtP(target) + " · " + verdict(lPr), style = label.style_label_left, color = color.new(verdictColor(lPr), 80), textcolor = verdictColor(lPr), size = txtSize))
+
+    // Panel
+    table.cell(tb, 0, 0, "TOPE · " + syminfo.ticker, text_color = color.white, text_size = bigSize, text_halign = text.align_left)
+    table.cell(tb, 1, 0, "Tope extremo", text_color = cRed, text_size = txtSize)
+    table.cell(tb, 2, 0, "Tope probable", text_color = cYel, text_size = txtSize)
+    table.cell(tb, 3, 0, "Suelo probable", text_color = cYel, text_size = txtSize)
+    table.cell(tb, 4, 0, "Suelo extremo", text_color = cRed, text_size = txtSize)
+    table.cell(tb, 5, 0, target > 0 ? "¿" + fmtP(target) + "?" : "", text_color = color.white, text_size = bigSize)
+
+    table.cell(tb, 0, 1, plazoText(p1, h1), text_color = cMut, text_size = txtSize, text_halign = text.align_left)
+    table.cell(tb, 1, 1, fmtP(uE1), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 2, 1, fmtP(uM1), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 3, 1, fmtP(dM1), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 4, 1, fmtP(dE1), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 5, 1, target > 0 ? verdict(pr1) + " · " + str.tostring(pr1, "0") + " %" : "", text_color = verdictColor(pr1), text_size = txtSize)
+
+    table.cell(tb, 0, 2, plazoText(p2, h2), text_color = cMut, text_size = txtSize, text_halign = text.align_left)
+    table.cell(tb, 1, 2, fmtP(uE2), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 2, 2, fmtP(uM2), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 3, 2, fmtP(dM2), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 4, 2, fmtP(dE2), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 5, 2, target > 0 ? verdict(pr2) + " · " + str.tostring(pr2, "0") + " %" : "", text_color = verdictColor(pr2), text_size = txtSize)
+
+    table.cell(tb, 0, 3, plazoText(p3, h3), text_color = cMut, text_size = txtSize, text_halign = text.align_left)
+    table.cell(tb, 1, 3, fmtP(uE3), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 2, 3, fmtP(uM3), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 3, 3, fmtP(dM3), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 4, 3, fmtP(dE3), text_color = color.white, text_size = txtSize)
+    table.cell(tb, 5, 3, target > 0 ? verdict(pr3) + " · " + str.tostring(pr3, "0") + " %" : "", text_color = verdictColor(pr3), text_size = txtSize)
+
+    table.cell(tb, 0, 4, "Tensión", text_color = cMut, text_size = txtSize, text_halign = text.align_left)
+    table.cell(tb, 1, 4, stretchText(stretch) + " (" + str.tostring(stretch, "0.0") + " ATR)", text_color = stretchColor(stretch), text_size = txtSize)
+
+    table.cell(tb, 0, 5, "Precio: " + fmtP(close), text_color = cMut, text_size = txtSize, text_halign = text.align_left)
+    table.cell(tb, 0, 6, "Datos: " + str.tostring(array.size(u1)) + " velas", text_color = cDim, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(tb, 1, 6, "No es asesoramiento financiero", text_color = cDim, text_size = size.tiny)
