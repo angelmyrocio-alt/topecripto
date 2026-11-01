@@ -12,8 +12,7 @@ const EVENTS = [
   ["share", "Veredictos compartidos"],
   ["share_case", "Promesas compartidas"],
   ["tope_view", "Indicador: visitas a la página"],
-  ["tope_copy", "Indicador: código copiado"],
-  ["tope_pro", "Indicador: interesados en el aviso al móvil"],
+  ["tope_pro", "Indicador: pulsan «Avísame cuando esté»"],
 ];
 
 function creds() {

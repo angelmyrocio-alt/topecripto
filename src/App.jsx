@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { CASES, ST_COLOR } from "./promesas.js";
-import TOPE_CODE from "./tope.pine?raw";
 
 // ===== Datos de reserva (CoinGecko, 26/09/2026). Se sustituyen por los datos en vivo de /api/prices =====
 const FALLBACK_DATE = "26/09/2026";
@@ -183,7 +182,7 @@ export default function App() {
         {tab !== "ind" && (
           <button className="newbar" type="button" onClick={() => setTab("ind")}>
             <span className="newtag">NUEVO</span>
-            <span>Indicador Tope gratis para TradingView</span>
+            <span>Indicador Tope: muy pronto dentro de la app</span>
             <span aria-hidden="true">→</span>
           </button>
         )}
@@ -473,7 +472,7 @@ function Pro({ coins, total, unlocked, onBack }) {
   );
 }
 
-// ===== INDICADOR TOPE (gratis para TradingView) =====
+// ===== INDICADOR TOPE (muy pronto dentro de la app) =====
 const VERDICTS = [
   ["PROBABLE", "#35c759", "Pasó en la mitad de los casos o más"],
   ["POSIBLE", "#ffb02e", "Entre 1 de cada 5 y la mitad"],
@@ -481,33 +480,20 @@ const VERDICTS = [
   ["IMPROBABLE", "#ff2d2d", "Menos de 1 de cada 20"],
 ];
 function Indicador() {
-  const [copied, setCopied] = useState(false);
-  const [showCode, setShowCode] = useState(false);
   const [wantPro, setWantPro] = useState(false);
-  const codeRef = useRef(null);
 
   useEffect(() => { trackInterest("tope_view"); }, []);
-
-  const copy = () => {
-    trackInterest("tope_copy");
-    const ok = () => { setCopied(true); setTimeout(() => setCopied(false), 2500); };
-    const fallback = () => {
-      setShowCode(true);
-      setTimeout(() => { try { codeRef.current.focus(); codeRef.current.select(); } catch {} }, 50);
-    };
-    try { navigator.clipboard.writeText(TOPE_CODE).then(ok, fallback); } catch { fallback(); }
-  };
 
   return (
     <section className="stack">
       <div>
         <h2 className="sec">Indicador Tope</h2>
-        <p className="lead">Para TradingView, gratis. Con el historial real de cada activo calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes, y te da el veredicto del precio que te prometen.</p>
+        <p className="lead">Muy pronto dentro de la app. Con el historial real de cada activo calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes, y te da el veredicto del precio que te prometen.</p>
       </div>
 
       <figure className="shot">
         <img src="/indicador/tope-xauusd.jpg" alt="Gráfico del oro con los niveles de Tope: tope extremo, tope probable, suelo probable y suelo extremo" loading="lazy" width="1600" height="900" />
-        <figcaption>Oro, 1 hora. ¿4.010 en 20 horas? Solo pasó el 1 % de las veces: improbable.</figcaption>
+        <figcaption>Ejemplo con el oro, 1 hora. ¿4.010 en 20 horas? Solo pasó el 1 % de las veces: improbable.</figcaption>
       </figure>
 
       <div className="vlist">
@@ -516,40 +502,23 @@ function Indicador() {
         ))}
       </div>
 
-      <button className="gold" type="button" onClick={copy}>{copied ? "Código copiado ✓" : "Copiar el código para TradingView"}</button>
-
-      <details open>
-        <summary>Cómo instalarlo (1 minuto)</summary>
-        <ol>
-          <li>Abre un gráfico en TradingView y, abajo, pulsa <b>Editor de Pine</b>.</li>
-          <li>Borra lo que haya y pega el código.</li>
-          <li>Pulsa <b>Añadir al gráfico</b>.</li>
-          <li>En la rueda de ajustes, escribe tu <b>precio objetivo</b> para ver el veredicto.</li>
-        </ol>
-      </details>
-
-      <details open={showCode} onToggle={(e) => setShowCode(e.currentTarget.open)}>
-        <summary>Ver el código</summary>
-        <textarea ref={codeRef} className="finput mono codebox" readOnly rows={10} value={TOPE_CODE} spellCheck={false} />
-      </details>
-
       <div className="plan">
-        <div className="head"><span className="name">¿Te avisamos?</span><span className="price"><small>próximamente</small></span></div>
-        <p className="flabel">El indicador gratis funciona en TradingView. Estamos preparando un aviso al móvil para cuando el precio toque su tope o su suelo, sin tener que estar mirando el gráfico.</p>
+        <div className="head"><span className="name">Muy pronto</span><span className="price"><small>en la app</small></span></div>
+        <p className="flabel">Elige la moneda, escribe el precio que te prometen y Tope te dice su tope, su suelo y el veredicto. Sin instalar nada, desde el móvil.</p>
         {!wantPro
-          ? <button className="ghost" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Me interesa el aviso al móvil</button>
+          ? <button className="gold" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Avísame cuando esté</button>
           : (
             <div className="stack">
               <p className="flabel">Apuntado. Lo anunciaremos primero en nuestras redes:</p>
               <div className="social">
-                <a className="gold sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
+                <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
+                <a className="ghost sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
                 <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
-                <a className="ghost sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
               </div>
             </div>
           )}
       </div>
-      <p className="note">Gratis y de código abierto. Calcula con datos pasados: no predice el futuro ni es asesoramiento financiero.</p>
+      <p className="note">Calcula con datos pasados: no predice el futuro ni es asesoramiento financiero.</p>
     </section>
   );
 }
@@ -686,7 +655,6 @@ a.ghost.sbtn{color:#e9f0f7}
 .shot img{display:block;width:100%;height:auto}
 .shot figcaption{padding:8px 10px;font-size:11px;color:#7b8696;border-top:1px solid #1c232d}
 .vlist{display:grid;gap:6px}
-.codebox{font-size:11px;letter-spacing:0;margin-top:10px;white-space:pre;overflow:auto}
 details ol b{color:#e9f0f7}
 .note{font-size:10.5px;color:#5b6675;text-align:center;line-height:1.5;margin:0}
 .foot{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;color:#454f5b;padding-top:6px;border-top:1px solid #1c232d}
