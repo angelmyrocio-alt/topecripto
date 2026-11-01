@@ -22,6 +22,14 @@ export const ST_COLOR = { FALLIDA: "#ff2d2d", "EN CURSO": "#ffb02e", CUMPLIDA: "
 export const CASES = [
   // ---------- FALLIDAS ----------
   {
+    id: "cryptobull-xrp-27-2026",
+    who: "CryptoBull", coin: "XRP", claim: "27 $ a finales de octubre de 2026", st: "FALLIDA",
+    p: "Lo dijo en agosto de 2026 este analista con cerca de un millón de seguidores en X, con XRP en unos 1,03 $. XRP cerró octubre de 2026 en unos 1,25 $; su máximo del mes fue de unos 1,55 $, el 2 de octubre.",
+    res: "XRP cerró octubre de 2026 en unos 1,25 $",
+    src: "https://finance.yahoo.com/markets/crypto/articles/xrp-price-prediction-analyst-says-125742956.html", sn: "Yahoo Finance",
+    src2: "https://www.investing.com/crypto/xrp/historical-data", sn2: "Investing.com",
+  },
+  {
     id: "bernstein-bitcoin-200000-2025",
     who: "Bernstein", coin: "BTC", claim: "200.000 $ a finales de 2025", st: "FALLIDA",
     p: "Subió su objetivo desde 150.000 $ en junio de 2024. Bitcoin cerró 2025 en unos 88.000 $.",
@@ -141,13 +149,6 @@ export const CASES = [
   },
 
   // ---------- EN CURSO ----------
-  {
-    id: "cryptobull-xrp-27-2026",
-    who: "CryptoBull", coin: "XRP", claim: "27 $ a finales de octubre de 2026", st: "EN CURSO", target: 27,
-    extra: "Lo dijo en agosto de 2026 este analista con cerca de un millón de seguidores en X, con XRP en unos 1,03 $. Vence el 31 de octubre de 2026.",
-    res: "Vence el 31 de octubre de 2026",
-    src: "https://finance.yahoo.com/markets/crypto/articles/xrp-price-prediction-analyst-says-125742956.html", sn: "Yahoo Finance",
-  },
   {
     id: "sc-bitcoin-300000-2026",
     who: "Standard Chartered", coin: "BTC", claim: "300.000 $ a finales de 2026", st: "EN CURSO", target: 300000,
