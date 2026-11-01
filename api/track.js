@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     if (!ALLOWED.has(name)) { res.status(400).json({ ok: false }); return; }
     const { url, token } = creds();
     if (!url || !token) { res.status(200).json({ ok: false, error: "sin-almacen" }); return; }
-    await fetch(`${url}/incr/tc:${name}`, { headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`${url}/incr/tc2:${name}`, { headers: { Authorization: `Bearer ${token}` } });
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json({ ok: true });
   } catch {

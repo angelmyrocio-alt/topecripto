@@ -14,10 +14,6 @@ const EVENTS = [
   ["tope_view", "Indicador: visitas a la página"],
   ["tope_copy", "Indicador: código copiado"],
   ["tope_pro", "Indicador: interesados en el aviso al móvil"],
-  // Versión anterior (se conservan para ver el histórico)
-  ["founder_reserve", "Antes: reservas Fundador"],
-  ["interest_pro", "Antes: interesados en Pro"],
-  ["interest_over", "Antes: interesados en Overdrive"],
 ];
 
 function creds() {
@@ -36,7 +32,7 @@ export default async function handler(req, res) {
   const counts = {};
   try {
     if (url && token) {
-      const keys = EVENTS.map(([k]) => `tc:${k}`);
+      const keys = EVENTS.map(([k]) => `tc2:${k}`);
       const r = await fetch(`${url}/mget/${keys.join("/")}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await r.json();
       const arr = (data && data.result) || [];
@@ -62,7 +58,7 @@ td.n{text-align:right;font-weight:700;font-size:20px;color:#ffd35a}
 .foot{margin-top:14px;font-size:11px;color:#5b6675}
 </style></head><body><div class="card">
 <h1>Topecripto · Contador de clics</h1>
-<p class="sub">Solo tu ves esto. Datos anonimos, sin cookies.</p>
+<p class="sub">Solo tu ves esto. Datos anonimos, sin cookies. Contando desde el 1/11/2026. Tus propias visitas no cuentan.</p>
 <table>${rows}</table>
 <div class="foot">Actualizado: ${new Date().toLocaleString("es-ES")}</div>
 </div></body></html>`);

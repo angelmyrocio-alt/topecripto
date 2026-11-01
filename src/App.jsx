@@ -67,8 +67,16 @@ const pol = (a) => { const r = (a * Math.PI) / 180; return [CX + R * Math.sin(r)
 const arcP = (a0, a1) => { const [s1, s2] = pol(a0), [e1, e2] = pol(a1); return `M${s1} ${s2}A${R} ${R} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} 1 ${e1} ${e2}`; };
 
 // Cuenta clics de forma anónima (sin datos personales). Lo ves en /api/stats.
+// Tus propias visitas no cuentan: entra una vez en topecripto.com/?soyyo desde cada móvil u ordenador tuyo.
+function isOwner() {
+  try {
+    if (new URLSearchParams(window.location.search).has("soyyo")) localStorage.setItem("tc_owner", "1");
+    return localStorage.getItem("tc_owner") === "1";
+  } catch { return false; }
+}
 function trackInterest(name) {
   try {
+    if (isOwner()) return;
     track(name);
     fetch("/api/track?e=" + encodeURIComponent(name)).catch(() => {});
   } catch { /* sin ruido */ }
