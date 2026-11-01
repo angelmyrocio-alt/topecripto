@@ -171,6 +171,14 @@ export default function App() {
           <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · 3 €/mes"}</button>
         </div>
 
+        {tab !== "ind" && (
+          <button className="newbar" type="button" onClick={() => setTab("ind")}>
+            <span className="newtag">NUEVO</span>
+            <span>Indicador Tope gratis para TradingView</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        )}
+
         {tab === "diag" && (
           <div>
             <h1>¿Ese precio que te prometen es posible?</h1>
@@ -652,6 +660,10 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .social{display:grid;gap:8px}
 .sbtn{display:block;text-align:center;text-decoration:none}
 a.ghost.sbtn{color:#e9f0f7}
+.newbar{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;background:#16120a;border:1px solid #6b5315;border-radius:11px;color:#e9f0f7;font:600 12px 'Chakra Petch',sans-serif;cursor:pointer;text-align:left}
+.newbar span:nth-child(2){flex:1;min-width:0}
+.newbar span:last-child{color:#ffd35a;font-weight:700}
+.newtag{font-size:9px;font-weight:700;letter-spacing:.06em;background:#ffd35a;color:#0b0e13;padding:3px 6px;border-radius:4px;flex-shrink:0}
 .shot{margin:0;border:1px solid #1c232d;border-radius:12px;overflow:hidden;background:#131722}
 .shot img{display:block;width:100%;height:auto}
 .shot figcaption{padding:8px 10px;font-size:11px;color:#7b8696;border-top:1px solid #1c232d}
