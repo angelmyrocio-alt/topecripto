@@ -513,14 +513,10 @@ function Indicador() {
       </details>
 
       <div className="plan">
-        <div className="head"><span className="name">Tope Pro</span><span className="price"><small>en preparación</small></span></div>
-        <ul>
-          <li>Versión para MetaTrader 5, lista para usar</li>
-          <li>Alertas al móvil cuando el precio toca su tope o su suelo</li>
-          <li>Incluido en Topecripto Pro</li>
-        </ul>
+        <div className="head"><span className="name">¿Te avisamos?</span><span className="price"><small>próximamente</small></span></div>
+        <p className="flabel">El indicador gratis funciona en TradingView. Estamos preparando un aviso al móvil para cuando el precio toque su tope o su suelo, sin tener que estar mirando el gráfico.</p>
         {!wantPro
-          ? <button className="ghost" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Me interesa Tope Pro</button>
+          ? <button className="ghost" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Me interesa el aviso al móvil</button>
           : (
             <div className="stack">
               <p className="flabel">Apuntado. Lo anunciaremos primero en nuestras redes:</p>

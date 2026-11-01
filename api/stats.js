@@ -12,7 +12,7 @@ const EVENTS = [
   ["share_case", "Promesas compartidas"],
   ["tope_view", "Indicador: visitas a la página"],
   ["tope_copy", "Indicador: código copiado"],
-  ["tope_pro", "Indicador: interesados en Tope Pro"],
+  ["tope_pro", "Indicador: interesados en el aviso al móvil"],
   // Versión anterior (se conservan para ver el histórico)
   ["founder_reserve", "Antes: reservas Fundador"],
   ["interest_pro", "Antes: interesados en Pro"],
