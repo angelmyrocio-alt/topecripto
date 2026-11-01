@@ -452,7 +452,7 @@ function Pro({ coins, total, unlocked, onBack }) {
   );
 }
 
-// ===== INDICADOR TOPE (gratis para TradingView; Pro para MT5 en preparación) =====
+// ===== INDICADOR TOPE (gratis para TradingView) =====
 const VERDICTS = [
   ["PROBABLE", "#35c759", "Pasó en la mitad de los casos o más"],
   ["POSIBLE", "#ffb02e", "Entre 1 de cada 5 y la mitad"],
