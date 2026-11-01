@@ -10,9 +10,9 @@ const EVENTS = [
   ["zeros_play", "Partidas al juego de los ceros"],
   ["share", "Veredictos compartidos"],
   ["share_case", "Promesas compartidas"],
-  ["ind_view", "Indicador: visitas a la página"],
-  ["ind_copy", "Indicador: código copiado"],
-  ["ind_pro", "Indicador: interesados en Tope Pro"],
+  ["tope_view", "Indicador: visitas a la página"],
+  ["tope_copy", "Indicador: código copiado"],
+  ["tope_pro", "Indicador: interesados en Tope Pro"],
   // Versión anterior (se conservan para ver el histórico)
   ["founder_reserve", "Antes: reservas Fundador"],
   ["interest_pro", "Antes: interesados en Pro"],

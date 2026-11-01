@@ -465,10 +465,10 @@ function Indicador() {
   const [wantPro, setWantPro] = useState(false);
   const codeRef = useRef(null);
 
-  useEffect(() => { trackInterest("ind_view"); }, []);
+  useEffect(() => { trackInterest("tope_view"); }, []);
 
   const copy = () => {
-    trackInterest("ind_copy");
+    trackInterest("tope_copy");
     const ok = () => { setCopied(true); setTimeout(() => setCopied(false), 2500); };
     const fallback = () => {
       setShowCode(true);
@@ -520,7 +520,7 @@ function Indicador() {
           <li>Incluido en Topecripto Pro</li>
         </ul>
         {!wantPro
-          ? <button className="ghost" type="button" onClick={() => { setWantPro(true); trackInterest("ind_pro"); }}>Me interesa Tope Pro</button>
+          ? <button className="ghost" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Me interesa Tope Pro</button>
           : (
             <div className="stack">
               <p className="flabel">Apuntado. Lo anunciaremos primero en nuestras redes:</p>
