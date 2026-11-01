@@ -21,6 +21,7 @@ const MEMES = ["SHIB", "PEPE", "DOGE"];
 // ===== Redes (el anuncio de Pro se hace ahí; no guardamos datos personales) =====
 const TIKTOK = "https://www.tiktok.com/@topecripto.app";
 const INSTAGRAM = "https://www.instagram.com/topecripto/";
+const TELEGRAM = "https://t.me/topecripto";
 
 // ===== Formato (español) =====
 const esNum = (x, d) => x.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -200,6 +201,9 @@ export default function App() {
         {tab === "ind" && <Indicador />}
         {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
+        <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
+          <b>Telegram</b><span>¿Qué moneda o predicción quieres que estudiemos? Escríbenos</span><i aria-hidden="true">→</i>
+        </a>
         <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : failed ? `Precios de reserva del ${FALLBACK_DATE}` : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
       </main>
     </div>
@@ -443,6 +447,7 @@ function Pro({ coins, total, unlocked, onBack }) {
           <div className="social">
             <a className="gold sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
             <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
+                <a className="ghost sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
           </div>
         </div>
       </div>
@@ -531,6 +536,7 @@ function Indicador() {
               <div className="social">
                 <a className="gold sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
                 <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
+                <a className="ghost sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
               </div>
             </div>
           )}
@@ -660,6 +666,10 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .social{display:grid;gap:8px}
 .sbtn{display:block;text-align:center;text-decoration:none}
 a.ghost.sbtn{color:#e9f0f7}
+.tgbar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0b1520;border:1px solid #1e3a52;border-radius:11px;text-decoration:none;font-size:11.5px;color:#aab4c0;line-height:1.35}
+.tgbar b{color:#5cb8f0;font-size:12.5px;flex-shrink:0}
+.tgbar span{flex:1;min-width:0}
+.tgbar i{font-style:normal;color:#5cb8f0;font-weight:700}
 .newbar{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;background:#16120a;border:1px solid #6b5315;border-radius:11px;color:#e9f0f7;font:600 12px 'Chakra Petch',sans-serif;cursor:pointer;text-align:left}
 .newbar span:nth-child(2){flex:1;min-width:0}
 .newbar span:last-child{color:#ffd35a;font-weight:700}

@@ -7,6 +7,7 @@ const EVENTS = [
   ["open_pro", "Visitas a la pestaña Pro"],
   ["follow_tiktok", "Clics en seguir TikTok"],
   ["follow_instagram", "Clics en seguir Instagram"],
+  ["follow_telegram", "Clics en Telegram"],
   ["zeros_play", "Partidas al juego de los ceros"],
   ["share", "Veredictos compartidos"],
   ["share_case", "Promesas compartidas"],
