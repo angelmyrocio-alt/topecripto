@@ -182,7 +182,7 @@ export default function App() {
         {tab !== "ind" && (
           <button className="newbar" type="button" onClick={() => setTab("ind")}>
             <span className="newtag">NUEVO</span>
-            <span>Indicador Tope: muy pronto dentro de la app</span>
+            <span>Indicador Tope: ya en la app, pruébalo gratis</span>
             <span aria-hidden="true">→</span>
           </button>
         )}
@@ -205,7 +205,7 @@ export default function App() {
         {tab === "diag" && <Diag coins={coins} total={total} />}
         {tab === "zeros" && <Zeros coins={coins} total={total} />}
         {tab === "hist" && <Promises coins={coins} total={total} focus={route.focus} />}
-        {tab === "ind" && <Indicador />}
+        {tab === "ind" && <Indicador coins={coins} />}
         {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
         <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
@@ -479,45 +479,92 @@ const VERDICTS = [
   ["DIFÍCIL", "#ff7a1a", "Menos de 1 de cada 5"],
   ["IMPROBABLE", "#ff2d2d", "Menos de 1 de cada 20"],
 ];
-function Indicador() {
-  const [wantPro, setWantPro] = useState(false);
+const TOPE_EXTRA = [{ sym: "ORO", name: "Oro (PAXG)" }];
+const vColor = (v) => (VERDICTS.find((x) => x[0] === v) || [0, "#8891a8"])[1];
+const fmtTope = (p) => (p >= 1000 ? esNum(p, 0) + " $" : fmtPrice(p));
+
+function Indicador({ coins }) {
+  const list = [...coins.map((c) => ({ sym: c.sym, name: c.name })), ...TOPE_EXTRA];
+  const [sym, setSym] = useState(() => (hashSym() && list.some((c) => c.sym === hashSym()) ? hashSym() : "BTC"));
+  const [text, setText] = useState("");
+  const [res, setRes] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
 
   useEffect(() => { trackInterest("tope_view"); }, []);
+
+  const run = async (s, t) => {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/tope?c=${encodeURIComponent(s)}${t ? "&t=" + t : ""}`);
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || "error");
+      setRes(d);
+      if (t) trackInterest("tope_calc");
+    } catch (e) { setErr("No se pudo calcular ahora. Prueba en un minuto."); }
+    finally { setBusy(false); }
+  };
+
+  useEffect(() => { run(sym, parseEs(text)); }, [sym]);
+
+  const pick = (s) => { setSym(s); setText(""); setRes(null); };
+  const target = parseEs(text);
 
   return (
     <section className="stack">
       <div>
         <h2 className="sec">Indicador Tope</h2>
-        <p className="lead">Muy pronto dentro de la app. Con el historial real de cada activo calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes, y te da el veredicto del precio que te prometen.</p>
+        <p className="lead">Con el historial real de cada moneda calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes. Escribe el precio que te prometen y te da el veredicto.</p>
       </div>
 
-      <figure className="shot">
-        <img src="/indicador/tope-xauusd.jpg" alt="Gráfico del oro con los niveles de Tope: tope extremo, tope probable, suelo probable y suelo extremo" loading="lazy" width="1600" height="900" />
-        <figcaption>Ejemplo con el oro, 1 hora. ¿4.010 en 20 horas? Solo pasó el 1 % de las veces: improbable.</figcaption>
-      </figure>
+      <div className="coins">
+        {list.map((c) => (
+          <button key={c.sym} type="button" aria-pressed={c.sym === sym} onClick={() => pick(c.sym)}>{c.sym}</button>
+        ))}
+      </div>
+      <div className="ask">
+        <label htmlFor="tgt">Precio que te prometen</label>
+        <input id="tgt" inputMode="decimal" autoComplete="off" placeholder={res ? fmtInput(res.price * 1.1) : ""} value={text}
+          onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") run(sym, target); }} />
+        <span>$</span>
+      </div>
+      <button className="btn" type="button" disabled={busy} onClick={() => run(sym, target)}>{busy ? "Calculando…" : "Calcular"}</button>
+      {err && <p className="note">{err}</p>}
+
+      {res && res.sym === sym && (
+        <div className="stack">
+          <p className="compare">{sym === "ORO" ? "Oro (PAXG)" : sym} hoy: <b>{fmtTope(res.price)}</b>{res.target ? <> · objetivo: <b>{fmtTope(res.target)}</b></> : null}</p>
+          {res.plazos.map((p) => (
+            <div className="tope" key={p.k}>
+              <div className="tope-h">
+                <b>En {p.label}</b>
+                {p.veredicto && <span className="t" style={{ background: vColor(p.veredicto) }}>{p.veredicto}</span>}
+              </div>
+              {p.veredicto && <p className="tope-p">Llegó a ese precio {esNum(p.prob, p.prob < 1 && p.prob > 0 ? 1 : 0)} de cada 100 veces</p>}
+              <div className="tope-g">
+                <span style={{ color: "#ff2d2d" }}>Tope extremo</span><b>{fmtTope(p.topeExt)}</b>
+                <span style={{ color: "#ffb02e" }}>Tope probable</span><b>{fmtTope(p.topeMid)}</b>
+                <span style={{ color: "#ffb02e" }}>Suelo probable</span><b>{fmtTope(p.sueloMid)}</b>
+                <span style={{ color: "#ff2d2d" }}>Suelo extremo</span><b>{fmtTope(p.sueloExt)}</b>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="vlist">
         {VERDICTS.map(([t, c, d]) => (
           <div className="row" key={t}><span className="t" style={{ background: c }}>{t}</span><span className="m" style={{ textAlign: "left" }}>{d}</span></div>
         ))}
       </div>
-
-      <div className="plan">
-        <div className="head"><span className="name">Muy pronto</span><span className="price"><small>en la app</small></span></div>
-        <p className="flabel">Elige la moneda, escribe el precio que te prometen y Tope te dice su tope, su suelo y el veredicto. Sin instalar nada, desde el móvil.</p>
-        {!wantPro
-          ? <button className="gold" type="button" onClick={() => { setWantPro(true); trackInterest("tope_pro"); }}>Avísame cuando esté</button>
-          : (
-            <div className="stack">
-              <p className="flabel">Apuntado. Lo anunciaremos primero en nuestras redes:</p>
-              <div className="social">
-                <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
-                <a className="ghost sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
-                <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
-              </div>
-            </div>
-          )}
-      </div>
+      <details>
+        <summary>¿Cómo se calcula?</summary>
+        <ol>
+          <li>Miramos cada momento de los últimos meses y cuánto llegó a subir y a bajar el precio en el plazo siguiente.</li>
+          <li>Tope probable: lo que se alcanzó la mitad de las veces. Tope extremo: solo 1 de cada 10 veces llegó más lejos. Igual con los suelos.</li>
+          <li>El veredicto cuenta cuántas veces, de cada 100, el precio llegó al objetivo que escribes.</li>
+        </ol>
+      </details>
       <p className="note">Calcula con datos pasados: no predice el futuro ni es asesoramiento financiero.</p>
     </section>
   );
@@ -626,6 +673,14 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:18px;background:linear-gradient(180deg,rgba(11,15,21,.55),rgba(11,15,21,.92))}
 .overlay strong{color:#e9f0f7;font-size:15px}
 .overlay p{margin:0;font-size:12px;color:#8891a8;line-height:1.45}
+.tope{background:#0b0f15;border:1px solid #1c232d;border-radius:12px;padding:12px;display:grid;gap:8px}
+.tope-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tope-h b{color:#e9f0f7;font-size:14px}
+.tope .t{font-size:10px;font-weight:700;color:#0b0e13;padding:3px 8px;border-radius:5px}
+.tope-p{margin:0;font-size:12px;color:#c7d0dc}
+.tope-g{display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:12.5px}
+.tope-g b{font:700 16px 'Rajdhani',sans-serif;color:#fff;text-align:right}
+.btn:disabled{opacity:.6;cursor:default}
 .plan{background:linear-gradient(180deg,#151119,#0b0f15);border:1px solid #7a5a10;border-radius:16px;padding:18px 15px 16px;display:grid;gap:10px}
 .planFree{border-color:#1c232d;background:#0b0f15}
 .planFree .name{color:#8891a8!important}

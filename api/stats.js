@@ -12,7 +12,7 @@ const EVENTS = [
   ["share", "Veredictos compartidos"],
   ["share_case", "Promesas compartidas"],
   ["tope_view", "Indicador: visitas a la página"],
-  ["tope_pro", "Indicador: pulsan «Avísame cuando esté»"],
+  ["tope_calc", "Indicador: calculan un precio objetivo"],
 ];
 
 function creds() {
