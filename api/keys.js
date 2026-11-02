@@ -92,9 +92,9 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 <h1>Topecripto · Claves de acceso</h1>
 <p class="sub">Cada clave da acceso Pro durante sus días, contados desde el primer uso, y solo funciona en el primer móvil u ordenador donde se usa. Validadas en el servidor.</p>
 <div class="btns">
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30"><button class="btn" type="submit">+ Clave Pro 1 mes</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500"><button class="btn" type="submit">+ Clave Pro de por vida</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7"><button class="btn ghost" type="submit">+ Prueba 7 días</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7"><button class="btn" type="submit">+ Clave Pro 1 semana</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30"><button class="btn ghost" type="submit">+ Clave Pro 1 mes</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500"><button class="btn ghost" type="submit">+ Clave Pro de por vida</button></form>
 </div>
 ${created}
 ${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
