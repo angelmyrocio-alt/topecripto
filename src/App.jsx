@@ -518,6 +518,11 @@ function Indicador({ coins }) {
         <p className="lead">Con el historial real de cada moneda calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes. Escribe el precio que te prometen y te da el veredicto.</p>
       </div>
 
+      <figure className="shot">
+        <img src="/indicador/tope-xauusd.jpg" alt="Gráfico del oro con los niveles de Tope: tope extremo, tope probable, suelo probable y suelo extremo" loading="lazy" width="1600" height="900" />
+        <figcaption>Ejemplo con el oro, 1 hora. ¿4.010 en 20 horas? Solo pasó el 1 % de las veces: improbable.</figcaption>
+      </figure>
+
       <div className="coins">
         {list.map((c) => (
           <button key={c.sym} type="button" aria-pressed={c.sym === sym} onClick={() => pick(c.sym)}>{c.sym}</button>
