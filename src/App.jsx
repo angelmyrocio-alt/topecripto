@@ -517,6 +517,10 @@ function Indicador({ coins }) {
         <h2 className="sec">Indicador Tope</h2>
         <p className="lead">Con el historial real de cada moneda calcula hasta dónde suele llegar el precio en 1 día, 1 semana y 1 mes. Escribe el precio que te prometen y te da el veredicto.</p>
       </div>
+      <div className="where">
+        <p><b>¿Para qué sirve?</b> Para saber si el precio que te prometen es realista en ese plazo, o si casi nunca ha pasado.</p>
+        <p><b>¿Dónde funciona?</b> Aquí mismo, en la web de Topecripto, desde el móvil o el ordenador. No necesitas TradingView ni MetaTrader ni instalar nada.</p>
+      </div>
 
       <div className="coins">
         {list.map((c) => (
@@ -674,6 +678,9 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:18px;background:linear-gradient(180deg,rgba(11,15,21,.55),rgba(11,15,21,.92))}
 .overlay strong{color:#e9f0f7;font-size:15px}
 .overlay p{margin:0;font-size:12px;color:#8891a8;line-height:1.45}
+.where{background:#0b0f15;border:1px solid #2a323d;border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.where p{margin:0;font-size:12.5px;line-height:1.45;color:#aab4c0}
+.where b{color:#ffd35a}
 .tope{background:#0b0f15;border:1px solid #1c232d;border-radius:12px;padding:12px;display:grid;gap:8px}
 .tope-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .tope-h b{color:#e9f0f7;font-size:14px}
