@@ -35,7 +35,8 @@ export default async function handler(req, res) {
       const code = newCode();
       const days = Math.max(1, parseInt(q.days || "7", 10) || 7);
       const note = String(q.note || "").slice(0, 60);
-      await redis(["SET", `code:${code}`, JSON.stringify({ created: Date.now(), activatedAt: null, days, note })]);
+      const tier = q.tier === "semana" ? "semana" : "mes";
+      await redis(["SET", `code:${code}`, JSON.stringify({ created: Date.now(), activatedAt: null, days, note, tier })]);
       await redis(["RPUSH", "codes:list", code]);
       justCreated = code;
     }
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
         if (left > 0) { estado = "activa"; dias = left > 3650 ? "de por vida" : `${left} días`; }
         else estado = "caducada";
       }
-      rows.push({ code, estado, dias, note: o.note || "" });
+      rows.push({ code, estado, dias, note: (o.tier === "semana" ? "Plan Semana" : "Plan Mes") + (o.note ? " · " + o.note : "") });
     }
 
     const color = (e) => e === "activa" ? "#35c759" : e === "sin usar" ? "#ffd35a" : "#ff5b5b";
@@ -90,14 +91,14 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .empty{color:#5b6675;font-size:13px;margin-top:16px}
 </style></head><body><div class="card">
 <h1>Topecripto · Claves de acceso</h1>
-<p class="sub">Cada clave da acceso Pro durante sus días, contados desde el primer uso, y solo funciona en el primer móvil u ordenador donde se usa. Validadas en el servidor.</p>
+<p class="sub">Plan Semana: indicador a 1 semana durante 7 días. Plan Mes: indicador a 1 semana y 1 mes durante 30 días. Los días cuentan desde el primer uso y la clave solo funciona en el primer móvil u ordenador donde se usa.</p>
 <div class="btns">
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7"><button class="btn" type="submit">+ Clave Pro 1 semana</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30"><button class="btn ghost" type="submit">+ Clave Pro 1 mes</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500"><button class="btn ghost" type="submit">+ Clave Pro de por vida</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7&tier=semana"><button class="btn" type="submit">+ Plan Semana · 9,99 € (7 días)</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30&tier=mes"><button class="btn" type="submit">+ Plan Mes · 34,99 € (30 días)</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500&tier=mes"><button class="btn ghost" type="submit">+ Plan Mes de por vida (regalo)</button></form>
 </div>
 ${created}
-${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
+${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Plan</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
 </div></body></html>`);
   } catch (e) {
     res.status(200).send("Error: " + (e && e.message ? e.message : "desconocido"));

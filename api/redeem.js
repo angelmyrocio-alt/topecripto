@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     }
     const until = obj.activatedAt + (obj.days || 7) * 86400000;
     if (Date.now() > until) { res.status(200).json({ ok: false, reason: "caducada", until }); return; }
-    res.status(200).json({ ok: true, until });
+    res.status(200).json({ ok: true, until, tier: obj.tier === "semana" ? "semana" : "mes" });
   } catch {
     res.status(200).json({ ok: false, reason: "error" });
   }

@@ -12,13 +12,15 @@ async function redis(cmd) {
   return d && "result" in d ? d.result : null;
 }
 
-export async function isPro(code, dev) {
+// Devuelve el plan de la clave ("semana" o "mes") o null si no vale para este dispositivo.
+export async function proTier(code, dev) {
   try {
-    if (!code || !dev) return false;
+    if (!code || !dev) return null;
     const raw = await redis(["GET", `code:${String(code).trim()}`]);
-    if (!raw) return false;
+    if (!raw) return null;
     const o = JSON.parse(raw);
-    if (o.revoked || !o.activatedAt || o.device !== dev) return false;
-    return Date.now() <= o.activatedAt + (o.days || 7) * 86400000;
-  } catch { return false; }
+    if (o.revoked || !o.activatedAt || o.device !== dev) return null;
+    if (Date.now() > o.activatedAt + (o.days || 7) * 86400000) return null;
+    return o.tier === "semana" ? "semana" : "mes";
+  } catch { return null; }
 }
