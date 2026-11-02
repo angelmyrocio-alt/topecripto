@@ -556,13 +556,7 @@ function Indicador({ coins, code, onPro }) {
       {res && res.sym === sym && (
         <div className="stack">
           <p className="compare">{sym === "ORO" ? "Oro (PAXG)" : sym} hoy: <b>{fmtTope(res.price)}</b>{res.target ? <> · objetivo: <b>{fmtTope(res.target)}</b></> : null}</p>
-          {res.plazos.map((p) => p.locked ? (
-            <div className="tope tope-lock" key={p.k}>
-              <div className="tope-h"><b>En {p.label}</b><span className="t" style={{ background: "#ffd35a" }}>PRO</span></div>
-              <p className="tope-p">Tope, suelo y veredicto a {p.label}: solo con Pro ({PRO_PRICE}/mes).</p>
-              <button className="gold" type="button" onClick={() => { trackInterest("tope_pro"); onPro(); }}>Desbloquear con Pro</button>
-            </div>
-          ) : (
+          {res.plazos.map((p) => p.locked ? null : (
             <div className="tope" key={p.k}>
               <div className="tope-h">
                 <b>En {p.label}</b>
@@ -577,6 +571,14 @@ function Indicador({ coins, code, onPro }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {res && res.sym === sym && res.plazos.some((p) => p.locked) && (
+        <div className="tope tope-lock">
+          <div className="tope-h"><b>1 semana y 1 mes</b><span className="t" style={{ background: "#ffd35a" }}>PRO</span></div>
+          <p className="tope-p">Los dos plazos, con su tope, su suelo y el veredicto, van incluidos en Pro: <b>{PRO_PRICE} al mes en total</b>, para todas las monedas y el oro.</p>
+          <button className="gold" type="button" onClick={() => { trackInterest("tope_pro"); onPro(); }}>Desbloquear con Pro</button>
         </div>
       )}
 
