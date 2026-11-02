@@ -2,7 +2,7 @@
 // Guarda un contador por evento en Upstash (base de datos gratis conectada a Vercel).
 const ALLOWED = new Set([
   "visit", "visit_ig", "visit_tt", "open_pro", "follow_tiktok", "follow_instagram", "follow_telegram", "zeros_play", "share", "share_case",
-  "tope_view", "tope_pro", "tope_calc",
+  "tope_view", "tope_pro", "tope_calc", "buy_pro",
 ]);
 
 function creds() {

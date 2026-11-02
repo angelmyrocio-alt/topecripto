@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       else {
         const until = o.activatedAt + (o.days || 7) * 86400000;
         const left = Math.ceil((until - Date.now()) / 86400000);
-        if (left > 0) { estado = "activa"; dias = `${left} días`; }
+        if (left > 0) { estado = "activa"; dias = left > 3650 ? "de por vida" : `${left} días`; }
         else estado = "caducada";
       }
       rows.push({ code, estado, dias, note: o.note || "" });
@@ -77,6 +77,8 @@ body{margin:0;background:#05070a;color:#e9f0f7;font-family:system-ui,sans-serif;
 h1{font-size:18px;margin:0 0 2px}
 .sub{font-size:12px;color:#7b8696;margin:0 0 14px}
 .btn{display:inline-block;border:0;cursor:pointer;font-family:inherit;background:linear-gradient(180deg,#ffd35a,#e0a92e);color:#0b0e13;font-weight:700;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:14px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn.ghost{background:#1c232d;color:#e9f0f7}
 .created{margin:14px 0;padding:12px;border:1px solid #4a3d15;border-radius:10px;background:#0b0f15;font-size:13px;line-height:1.6}
 table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
 th,td{text-align:left;padding:9px 6px;border-bottom:1px solid #141a22}
@@ -88,8 +90,12 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .empty{color:#5b6675;font-size:13px;margin-top:16px}
 </style></head><body><div class="card">
 <h1>Topecripto · Claves de acceso</h1>
-<p class="sub">Cada clave da 7 días de acceso completo a Pro, contados desde el primer uso. Validadas en el servidor.</p>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}"><button class="btn" type="submit">+ Generar clave nueva (7 días)</button></form>
+<p class="sub">Cada clave da acceso Pro durante sus días, contados desde el primer uso, y solo funciona en el primer móvil u ordenador donde se usa. Validadas en el servidor.</p>
+<div class="btns">
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30"><button class="btn" type="submit">+ Clave Pro 1 mes</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500"><button class="btn" type="submit">+ Clave Pro de por vida</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7"><button class="btn ghost" type="submit">+ Prueba 7 días</button></form>
+</div>
 ${created}
 ${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
 </div></body></html>`);

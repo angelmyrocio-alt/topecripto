@@ -1,4 +1,5 @@
-// Valida una clave de acceso en el servidor y cuenta 7 días desde el primer uso.
+// Valida una clave de acceso en el servidor y cuenta sus días desde el primer uso.
+// Cada clave queda atada al primer móvil u ordenador que la usa: en otro dispositivo no sirve.
 // La caducidad vive en Upstash: no se puede resetear desde el navegador.
 async function redis(cmd) {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -18,12 +19,16 @@ export default async function handler(req, res) {
   try {
     const code = String((req.query && req.query.code) || "").trim();
     if (!code) { res.status(200).json({ ok: false, reason: "sin-codigo" }); return; }
+    const dev = String((req.query && req.query.d) || "").slice(0, 64);
     const raw = await redis(["GET", `code:${code}`]);
     if (!raw) { res.status(200).json({ ok: false, reason: "invalida" }); return; }
     const obj = JSON.parse(raw);
     if (obj.revoked) { res.status(200).json({ ok: false, reason: "anulada" }); return; }
-    if (!obj.activatedAt) {
-      obj.activatedAt = Date.now();
+    if (obj.device && dev !== obj.device) { res.status(200).json({ ok: false, reason: "otro-dispositivo" }); return; }
+    if (!obj.activatedAt || !obj.device) {
+      if (!dev) { res.status(200).json({ ok: false, reason: "sin-dispositivo" }); return; }
+      obj.activatedAt = obj.activatedAt || Date.now();
+      obj.device = dev;
       await redis(["SET", `code:${code}`, JSON.stringify(obj)]);
     }
     const until = obj.activatedAt + (obj.days || 7) * 86400000;

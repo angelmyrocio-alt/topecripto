@@ -3,6 +3,8 @@
 // en cada plazo (1 día, 1 semana, 1 mes) y da los topes, los suelos y la probabilidad
 // de llegar a un precio objetivo. No es asesoramiento financiero.
 
+import { isPro } from "./_pro.js";
+
 const IDS = {
   BTC: "bitcoin", ETH: "ethereum", XRP: "ripple", SOL: "solana", DOGE: "dogecoin",
   ADA: "cardano", SHIB: "shiba-inu", PEPE: "pepe", HYPE: "hyperliquid", LINK: "chainlink",
@@ -64,11 +66,14 @@ export default async function handler(req, res) {
     if (!id) { res.status(400).json({ error: "Moneda no disponible" }); return; }
     const target = parseFloat(String((req.query && req.query.t) || "0").replace(",", "."));
 
+    // Gratis: 1 día. Con Pro (clave + este dispositivo): 1 semana y 1 mes.
+    const pro = await isPro(req.query && req.query.k, req.query && req.query.d);
     const [h, d] = await Promise.all([series(id, 90), series(id, 365)]);
     if (h.length < 500 || d.length < 100) throw new Error("pocos datos");
     const price = h[h.length - 1];
 
     const plazos = PLAZOS.map((pl) => {
+      if (!pro && pl.k !== "1d") return { k: pl.k, label: pl.label, locked: true };
       const px = pl.src === "h" ? h : d;
       const { ups, dns } = excursions(px, pl.n);
       const out = {
@@ -86,8 +91,8 @@ export default async function handler(req, res) {
       return out;
     });
 
-    res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=1800");
-    res.status(200).json({ sym, price, target: target > 0 ? target : null, plazos, updated: Date.now() });
+    res.setHeader("Cache-Control", pro ? "private, no-store" : "s-maxage=600, stale-while-revalidate=1800");
+    res.status(200).json({ sym, pro, price, target: target > 0 ? target : null, plazos, updated: Date.now() });
   } catch (e) {
     res.status(502).json({ error: "No se pudo calcular ahora. Prueba en un minuto." });
   }
