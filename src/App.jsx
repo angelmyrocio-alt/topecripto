@@ -579,7 +579,8 @@ function Indicador({ coins }) {
 
       {res && res.sym === sym && res.plazos.some((p) => p.locked) && (
         <div className="tope tope-lock">
-          <div className="tope-h"><b>Indicador completo: 1 semana y 1 mes</b></div>
+          <div className="tope-h"><b>Indicador Tope</b><span className="t" style={{ background: "#ffd35a" }}>APARTE</span></div>
+          <p className="tope-p">1 semana y 1 mes, con tope, suelo y veredicto. Se paga aparte de la app: no va incluido en ningún plan de Topecripto.</p>
           <div className="tope-g">
             <span>Acceso 1 semana</span><b>{TOPE_WEEK}</b>
             <span>Acceso 1 mes</span><b>{TOPE_MONTH}</b>
