@@ -558,6 +558,10 @@ function Indicador({ coins }) {
         </div>
       )}
 
+      <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
+        <b>¿Más información?</b><span>Pregúntanos lo que quieras por Telegram</span><i aria-hidden="true">→</i>
+      </a>
+
       <div className="vlist">
         {VERDICTS.map(([t, c, d]) => (
           <div className="row" key={t}><span className="t" style={{ background: c }}>{t}</span><span className="m" style={{ textAlign: "left" }}>{d}</span></div>
