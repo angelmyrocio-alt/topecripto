@@ -1,4 +1,5 @@
-// Comprueba en el servidor si una clave Pro es válida para este dispositivo (no se puede falsear desde el navegador).
+// Códigos del indicador Tope (producto aparte de Topecripto Pro), comprobados en el servidor.
+// Cada código queda atado al primer móvil u ordenador que lo usa y dura sus días desde ese primer uso.
 async function redis(cmd) {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -12,13 +13,24 @@ async function redis(cmd) {
   return d && "result" in d ? d.result : null;
 }
 
-export async function isPro(code, dev) {
+export async function topeAccess(code, dev) {
   try {
-    if (!code || !dev) return false;
-    const raw = await redis(["GET", `code:${String(code).trim()}`]);
-    if (!raw) return false;
+    code = String(code || "").trim();
+    dev = String(dev || "").slice(0, 64);
+    if (!code) return { ok: false, reason: "sin-codigo" };
+    if (!dev) return { ok: false, reason: "sin-dispositivo" };
+    const raw = await redis(["GET", `code:${code}`]);
+    if (!raw) return { ok: false, reason: "invalida" };
     const o = JSON.parse(raw);
-    if (o.revoked || !o.activatedAt || o.device !== dev) return false;
-    return Date.now() <= o.activatedAt + (o.days || 7) * 86400000;
-  } catch { return false; }
+    if (o.product !== "tope" || o.revoked) return { ok: false, reason: "invalida" };
+    if (o.device && o.device !== dev) return { ok: false, reason: "otro-dispositivo" };
+    if (!o.activatedAt) {
+      o.activatedAt = Date.now();
+      o.device = dev;
+      await redis(["SET", `code:${code}`, JSON.stringify(o)]);
+    }
+    const until = o.activatedAt + (o.days || 7) * 86400000;
+    if (Date.now() > until) return { ok: false, reason: "caducada" };
+    return { ok: true, until };
+  } catch { return { ok: false, reason: "error" }; }
 }

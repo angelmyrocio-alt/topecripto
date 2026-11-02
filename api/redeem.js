@@ -23,6 +23,7 @@ export default async function handler(req, res) {
     const raw = await redis(["GET", `code:${code}`]);
     if (!raw) { res.status(200).json({ ok: false, reason: "invalida" }); return; }
     const obj = JSON.parse(raw);
+    if (obj.product === "tope") { res.status(200).json({ ok: false, reason: "es-del-indicador" }); return; }
     if (obj.revoked) { res.status(200).json({ ok: false, reason: "anulada" }); return; }
     if (obj.device && dev !== obj.device) { res.status(200).json({ ok: false, reason: "otro-dispositivo" }); return; }
     if (!obj.activatedAt || !obj.device) {

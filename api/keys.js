@@ -35,7 +35,8 @@ export default async function handler(req, res) {
       const code = newCode();
       const days = Math.max(1, parseInt(q.days || "7", 10) || 7);
       const note = String(q.note || "").slice(0, 60);
-      await redis(["SET", `code:${code}`, JSON.stringify({ created: Date.now(), activatedAt: null, days, note })]);
+      const product = q.product === "tope" ? "tope" : "pro";
+      await redis(["SET", `code:${code}`, JSON.stringify({ created: Date.now(), activatedAt: null, days, note, product })]);
       await redis(["RPUSH", "codes:list", code]);
       justCreated = code;
     }
@@ -52,10 +53,10 @@ export default async function handler(req, res) {
       else {
         const until = o.activatedAt + (o.days || 7) * 86400000;
         const left = Math.ceil((until - Date.now()) / 86400000);
-        if (left > 0) { estado = "activa"; dias = left > 3650 ? "de por vida" : `${left} días`; }
+        if (left > 0) { estado = "activa"; dias = `${left} días`; }
         else estado = "caducada";
       }
-      rows.push({ code, estado, dias, note: o.note || "" });
+      rows.push({ code, estado, dias, note: (o.product === "tope" ? `Indicador ${o.days >= 30 ? "1 mes" : "1 semana"}` : "App Pro") + (o.note ? " · " + o.note : "") });
     }
 
     const color = (e) => e === "activa" ? "#35c759" : e === "sin usar" ? "#ffd35a" : "#ff5b5b";
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
       <td class="mono">${r.code}</td>
       <td><span class="tag" style="background:${color(r.estado)}">${r.estado}</span> ${r.dias}</td>
       <td class="note">${r.note ? r.note : "—"}</td>
-      <td><a class="lnk" href="${base}/?acceso=${r.code}" target="_blank">enlace</a></td>
+      <td>${r.note.startsWith("Indicador") ? "pegar en /indicador" : `<a class="lnk" href="${base}/?acceso=${r.code}" target="_blank">enlace</a>`}</td>
     </tr>`).join("");
 
     const created = justCreated ? `<div class="created">Clave nueva creada: <b class="mono">${justCreated}</b><br>Enlace para enviar: <a class="lnk" href="${base}/?acceso=${justCreated}">${base}/?acceso=${justCreated}</a></div>` : "";
@@ -90,14 +91,14 @@ th{color:#7b8696;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .empty{color:#5b6675;font-size:13px;margin-top:16px}
 </style></head><body><div class="card">
 <h1>Topecripto · Claves de acceso</h1>
-<p class="sub">Cada clave da acceso Pro durante sus días, contados desde el primer uso, y solo funciona en el primer móvil u ordenador donde se usa. Validadas en el servidor.</p>
+<p class="sub">Indicador: 1 semana o 1 mes de acceso al indicador completo, contados desde el primer uso. Cada código solo funciona en el primer móvil u ordenador donde se usa. Se pega en la página del indicador.</p>
 <div class="btns">
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=7"><button class="btn" type="submit">+ Clave Pro 1 semana</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=30"><button class="btn ghost" type="submit">+ Clave Pro 1 mes</button></form>
-<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&days=36500"><button class="btn ghost" type="submit">+ Clave Pro de por vida</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&product=tope&days=7"><button class="btn" type="submit">+ Indicador · 1 semana (9,99 €)</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&product=tope&days=30"><button class="btn" type="submit">+ Indicador · 1 mes (34,99 €)</button></form>
+<form method="post" action="/api/keys?key=${encodeURIComponent(secret)}&product=pro&days=7"><button class="btn ghost" type="submit">+ Prueba app Pro · 7 días</button></form>
 </div>
 ${created}
-${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Nota</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
+${rows.length ? `<table><thead><tr><th>Clave</th><th>Estado</th><th>Producto</th><th>Enviar</th></tr></thead><tbody>${trs}</tbody></table>` : `<div class="empty">Aún no hay claves. Pulsa "Generar clave nueva".</div>`}
 </div></body></html>`);
   } catch (e) {
     res.status(200).send("Error: " + (e && e.message ? e.message : "desconocido"));

@@ -81,7 +81,7 @@ function trackInterest(name) {
   } catch { /* sin ruido */ }
 }
 
-// Identificador anónimo de este móvil u ordenador (las claves Pro quedan atadas a él)
+// Identificador anónimo de este móvil u ordenador (los códigos quedan atados a él)
 function getDev() {
   try {
     let d = localStorage.getItem("tc_dev");
@@ -89,9 +89,8 @@ function getDev() {
     return d;
   } catch { return ""; }
 }
-const PRO_PRICE = "9,99 €";
-const PRO_PER = "semana";
-const PRO_MONTH = "34,99 €";
+// Indicador Tope: producto aparte de Topecripto Pro
+const TOPE_WEEK = "9,99 €", TOPE_MONTH = "34,99 €";
 
 // ===== Direcciones: cada pestaña y cada promesa tiene su URL =====
 // /  ·  /ceros  ·  /promesas  ·  /promesas/<id>  ·  /indicador  ·  /pro
@@ -120,19 +119,6 @@ export default function App() {
   const tab = route.tab;
   const setTab = (k) => { setRoute({ tab: k, focus: null }); writePath(TAB_PATH[k]); };
   const [unlocked, setUnlocked] = useState(false);
-  const [code, setCode] = useState(null);
-  const [codeMsg, setCodeMsg] = useState(null);
-
-  const redeem = async (c, fromUser) => {
-    try {
-      const r = await fetch("/api/redeem?code=" + encodeURIComponent(c) + "&d=" + encodeURIComponent(getDev()));
-      const d = await r.json();
-      if (d && d.ok) { setUnlocked(true); setCode(c); setCodeMsg(null); try { localStorage.setItem("tc_code", c); } catch {} return true; }
-      try { localStorage.removeItem("tc_code"); } catch {}
-      if (fromUser) setCodeMsg(d && d.reason === "otro-dispositivo" ? "Ese código ya se usa en otro móvil u ordenador." : d && d.reason === "caducada" ? "Ese código ha caducado." : "Código no válido.");
-      return false;
-    } catch { if (fromUser) setCodeMsg("No se pudo comprobar. Prueba otra vez."); return false; }
-  };
 
   // Botones atrás/adelante del navegador
   useEffect(() => {
@@ -163,9 +149,18 @@ export default function App() {
 
   // Acceso completo con clave validada en el servidor: ?acceso=CODIGO
   useEffect(() => {
-    let c = null;
-    try { c = new URLSearchParams(window.location.search).get("acceso") || localStorage.getItem("tc_code"); } catch {}
-    if (c) redeem(c, false);
+    let alive = true, code = null;
+    try { code = new URLSearchParams(window.location.search).get("acceso") || localStorage.getItem("tc_code"); } catch {}
+    if (!code) return;
+    fetch("/api/redeem?code=" + encodeURIComponent(code) + "&d=" + encodeURIComponent(getDev()))
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d && d.ok) { setUnlocked(true); try { localStorage.setItem("tc_code", code); } catch {} }
+        else { try { localStorage.removeItem("tc_code"); } catch {} }
+      })
+      .catch(() => {});
+    return () => { alive = false; };
   }, []);
 
   // De dónde llega la gente: ?ref=ig (Instagram) o ?ref=tt (TikTok). Una vez por sesión.
@@ -192,7 +187,7 @@ export default function App() {
             <div className="brand">TOPE<b>CRIPTO</b></div>
             <div className="live"><i style={{ background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : failed ? "SIN CONEXIÓN" : "cargando…"}</div>
           </div>
-          <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · desde " + PRO_PRICE}</button>
+          <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · 3 €/mes"}</button>
         </div>
 
         {tab !== "ind" && (
@@ -221,8 +216,8 @@ export default function App() {
         {tab === "diag" && <Diag coins={coins} total={total} />}
         {tab === "zeros" && <Zeros coins={coins} total={total} />}
         {tab === "hist" && <Promises coins={coins} total={total} focus={route.focus} />}
-        {tab === "ind" && <Indicador coins={coins} code={code} onPro={goPro} />}
-        {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} onCode={(c) => redeem(c, true)} codeMsg={codeMsg} onTope={() => setTab("ind")} />}
+        {tab === "ind" && <Indicador coins={coins} />}
+        {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
 
         <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
           <b>Telegram</b><span>¿Qué moneda o predicción quieres que estudiemos? Escríbenos</span><i aria-hidden="true">→</i>
@@ -438,8 +433,7 @@ function Promises({ coins, total, focus }) {
 }
 
 // ===== PRO (plan único) =====
-function Pro({ coins, total, unlocked, onBack, onCode, codeMsg, onTope }) {
-  const [cin, setCin] = useState("");
+function Pro({ coins, total, unlocked, onBack }) {
   const sample = [["BTC", 1000000], ["SOL", 1000], ["DOGE", 10], ["SHIB", 1], ["PEPE", 0.01]];
   const rows = sample.map(([s, t]) => {
     const c = coins.find((x) => x.sym === s); if (!c) return null;
@@ -450,7 +444,6 @@ function Pro({ coins, total, unlocked, onBack, onCode, codeMsg, onTope }) {
   if (unlocked) {
     return (
       <section className="stack">
-        <button className="gold" type="button" onClick={onTope}>Abrir el indicador Tope completo</button>
         <Detector coins={coins} total={total} />
         <button className="ghost" type="button" onClick={onBack}>← Volver al diagnóstico</button>
       </section>
@@ -460,23 +453,21 @@ function Pro({ coins, total, unlocked, onBack, onCode, codeMsg, onTope }) {
   return (
     <section className="stack">
       <div className="plan">
-        <div className="head"><span className="name">Topecripto Pro</span><span className="price">{PRO_PRICE}<small> /{PRO_PER}</small></span></div>
-        <div className="head"><span className="flabel">o el mes entero</span><span className="price">{PRO_MONTH}<small> /mes</small></span></div>
+        <div className="head"><span className="name">Topecripto Pro</span><span className="price">3 €<small> /mes</small></span></div>
         <ul>
-          <li>Indicador Tope a 1 semana y 1 mes, con veredicto de tu precio</li>
-          <li>Todas las monedas y el oro</li>
           <li>Detector de tablas de influencers</li>
-          <li>Tu código funciona en tu móvil u ordenador</li>
+          <li>Watchlist con alertas de veredicto</li>
+          <li>Avisos cuando entra un caso nuevo en «Quién prometió qué» o se resuelve uno en curso</li>
+          <li>Todas las monedas, no solo las principales</li>
         </ul>
-        <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("buy_pro")}>Conseguir Pro · escríbenos por Telegram</a>
-        <p className="flabel">Te respondemos con cómo pagar y te enviamos tu código.</p>
-        <div className="ask">
-          <label htmlFor="pcode">¿Ya tienes código?</label>
-          <input id="pcode" autoComplete="off" placeholder="TC-XXXX-XXXX-XXXX" value={cin} onChange={(e) => setCin(e.target.value.toUpperCase())}
-            onKeyDown={(e) => { if (e.key === "Enter" && cin.trim()) onCode(cin.trim()); }} style={{ fontSize: 16 }} />
+        <div className="stack">
+          <p className="flabel">Lo anunciaremos primero en nuestras redes. Síguenos para enterarte:</p>
+          <div className="social">
+            <a className="gold sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
+            <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
+                <a className="ghost sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
+          </div>
         </div>
-        <button className="ghost" type="button" disabled={!cin.trim()} onClick={() => onCode(cin.trim())}>Activar código</button>
-        {codeMsg && <p className="note">{codeMsg}</p>}
       </div>
       <div className="locked">
         <div className="preview">{rows}</div>
@@ -484,14 +475,15 @@ function Pro({ coins, total, unlocked, onBack, onCode, codeMsg, onTope }) {
       </div>
       <div className="plan planFree">
         <div className="head"><span className="name">Gratis</span><span className="price">0 €</span></div>
-        <ul className="free"><li>Indicador Tope a 1 día</li><li>Diagnóstico de cualquier predicción</li><li>El juego de los ceros</li><li>Todo «Quién prometió qué»</li><li>Compartir el veredicto</li></ul>
+        <ul className="free"><li>Diagnóstico de cualquier predicción</li><li>El juego de los ceros</li><li>Todo «Quién prometió qué»</li><li>Compartir el veredicto</li></ul>
       </div>
+      <p className="note">Pro aún no está abierto y no se cobra nada.</p>
       <button className="ghost" type="button" onClick={onBack}>← Volver al diagnóstico</button>
     </section>
   );
 }
 
-// ===== INDICADOR TOPE (1 día gratis; 1 semana y 1 mes con Pro) =====
+// ===== INDICADOR TOPE (muy pronto dentro de la app) =====
 const VERDICTS = [
   ["PROBABLE", "#35c759", "Pasó en la mitad de los casos o más"],
   ["POSIBLE", "#ffb02e", "Entre 1 de cada 5 y la mitad"],
@@ -502,7 +494,10 @@ const TOPE_EXTRA = [{ sym: "ORO", name: "Oro (PAXG)" }];
 const vColor = (v) => (VERDICTS.find((x) => x[0] === v) || [0, "#8891a8"])[1];
 const fmtTope = (p) => (p >= 1000 ? String(Math.round(p)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " $" : fmtPrice(p));
 
-function Indicador({ coins, code, onPro }) {
+function Indicador({ coins }) {
+  const [tcode, setTcode] = useState(() => { try { return localStorage.getItem("tc_tope") || ""; } catch { return ""; } });
+  const [cin, setCin] = useState("");
+  const [cmsg, setCmsg] = useState(null);
   const base = coins.map((c) => ({ sym: c.sym, name: c.name }));
   const list = [...base.slice(0, 1), ...TOPE_EXTRA, ...base.slice(1)];
   const [sym, setSym] = useState(() => (hashSym() && list.some((c) => c.sym === hashSym()) ? hashSym() : "BTC"));
@@ -513,19 +508,24 @@ function Indicador({ coins, code, onPro }) {
 
   useEffect(() => { trackInterest("tope_view"); }, []);
 
-  const run = async (s, t) => {
+  const run = async (s, t, kk) => {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch(`/api/tope?c=${encodeURIComponent(s)}${t ? "&t=" + t : ""}${code ? "&k=" + encodeURIComponent(code) + "&d=" + encodeURIComponent(getDev()) : ""}`);
+      const k = kk !== undefined ? kk : tcode;
+      const r = await fetch(`/api/tope?c=${encodeURIComponent(s)}${t ? "&t=" + t : ""}${k ? "&k=" + encodeURIComponent(k) + "&d=" + encodeURIComponent(getDev()) : ""}`);
       const d = await r.json();
       if (!r.ok || d.error) throw new Error(d.error || "error");
       setRes(d);
+      if (k && kk !== undefined) {
+        if (d.access && d.access.ok) { setTcode(k); setCmsg(null); try { localStorage.setItem("tc_tope", k); } catch {} }
+        else setCmsg(d.access && d.access.reason === "otro-dispositivo" ? "Ese código ya se usa en otro móvil u ordenador." : d.access && d.access.reason === "caducada" ? "Ese código ha caducado." : "Código no válido.");
+      } else if (k && d.access && !d.access.ok) { setTcode(""); try { localStorage.removeItem("tc_tope"); } catch {} }
       if (t) trackInterest("tope_calc");
     } catch (e) { setErr("No se pudo calcular ahora. Prueba en un minuto."); }
     finally { setBusy(false); }
   };
 
-  useEffect(() => { run(sym, parseEs(text)); }, [sym, code]);
+  useEffect(() => { run(sym, parseEs(text)); }, [sym]);
 
   const pick = (s) => { setSym(s); setText(""); setRes(null); };
   const target = parseEs(text);
@@ -579,9 +579,20 @@ function Indicador({ coins, code, onPro }) {
 
       {res && res.sym === sym && res.plazos.some((p) => p.locked) && (
         <div className="tope tope-lock">
-          <div className="tope-h"><b>1 semana y 1 mes</b><span className="t" style={{ background: "#ffd35a" }}>PRO</span></div>
-          <p className="tope-p">Los dos plazos, con su tope, su suelo y el veredicto, van incluidos en Pro: <b>{PRO_PRICE} la semana o {PRO_MONTH} el mes</b>, para todas las monedas y el oro.</p>
-          <button className="gold" type="button" onClick={() => { trackInterest("tope_pro"); onPro(); }}>Desbloquear con Pro</button>
+          <div className="tope-h"><b>Indicador completo: 1 semana y 1 mes</b></div>
+          <div className="tope-g">
+            <span>Acceso 1 semana</span><b>{TOPE_WEEK}</b>
+            <span>Acceso 1 mes</span><b>{TOPE_MONTH}</b>
+          </div>
+          <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("tope_pro")}>Conseguir el indicador · escríbenos por Telegram</a>
+          <p className="tope-p">Te respondemos con cómo pagar y te enviamos tu código. Funciona en un solo móvil u ordenador.</p>
+          <div className="ask">
+            <label htmlFor="tcode">¿Tienes código?</label>
+            <input id="tcode" autoComplete="off" placeholder="TC-XXXX-XXXX-XXXX" value={cin} style={{ fontSize: 16 }}
+              onChange={(e) => setCin(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter" && cin.trim()) run(sym, target, cin.trim()); }} />
+          </div>
+          <button className="ghost" type="button" disabled={!cin.trim()} onClick={() => run(sym, target, cin.trim())}>Activar código</button>
+          {cmsg && <p className="note">{cmsg}</p>}
         </div>
       )}
 
@@ -710,6 +721,8 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:18px;background:linear-gradient(180deg,rgba(11,15,21,.55),rgba(11,15,21,.92))}
 .overlay strong{color:#e9f0f7;font-size:15px}
 .overlay p{margin:0;font-size:12px;color:#8891a8;line-height:1.45}
+.tope-lock{border-color:#7a5a10;background:linear-gradient(180deg,#151119,#0b0f15)}
+.ghost:disabled{opacity:.6;cursor:default}
 .tope{background:#0b0f15;border:1px solid #1c232d;border-radius:12px;padding:12px;display:grid;gap:8px}
 .tope-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .tope-h b{color:#e9f0f7;font-size:14px}
@@ -717,8 +730,7 @@ details ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:#8891a8;line-h
 .tope-p{margin:0;font-size:12px;color:#c7d0dc}
 .tope-g{display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:12.5px}
 .tope-g b{font:700 16px 'Rajdhani',sans-serif;color:#fff;text-align:right}
-.btn:disabled,.ghost:disabled{opacity:.6;cursor:default}
-.tope-lock{border-color:#7a5a10;background:linear-gradient(180deg,#151119,#0b0f15)}
+.btn:disabled{opacity:.6;cursor:default}
 .plan{background:linear-gradient(180deg,#151119,#0b0f15);border:1px solid #7a5a10;border-radius:16px;padding:18px 15px 16px;display:grid;gap:10px}
 .planFree{border-color:#1c232d;background:#0b0f15}
 .planFree .name{color:#8891a8!important}

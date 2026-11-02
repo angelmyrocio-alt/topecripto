@@ -13,8 +13,7 @@ const EVENTS = [
   ["share_case", "Promesas compartidas"],
   ["tope_view", "Indicador: visitas a la página"],
   ["tope_calc", "Indicador: calculan un precio objetivo"],
-  ["tope_pro", "Indicador: pulsan «Desbloquear con Pro»"],
-  ["buy_pro", "Pro: pulsan «Conseguir Pro» (Telegram)"],
+  ["tope_pro", "Indicador: pulsan «Conseguir el indicador» (Telegram)"],
 ];
 
 function creds() {
