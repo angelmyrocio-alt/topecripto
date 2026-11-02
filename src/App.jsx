@@ -481,10 +481,11 @@ const VERDICTS = [
 ];
 const TOPE_EXTRA = [{ sym: "ORO", name: "Oro (PAXG)" }];
 const vColor = (v) => (VERDICTS.find((x) => x[0] === v) || [0, "#8891a8"])[1];
-const fmtTope = (p) => (p >= 1000 ? esNum(p, 0) + " $" : fmtPrice(p));
+const fmtTope = (p) => (p >= 1000 ? String(Math.round(p)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " $" : fmtPrice(p));
 
 function Indicador({ coins }) {
-  const list = [...coins.map((c) => ({ sym: c.sym, name: c.name })), ...TOPE_EXTRA];
+  const base = coins.map((c) => ({ sym: c.sym, name: c.name }));
+  const list = [...base.slice(0, 1), ...TOPE_EXTRA, ...base.slice(1)];
   const [sym, setSym] = useState(() => (hashSym() && list.some((c) => c.sym === hashSym()) ? hashSym() : "BTC"));
   const [text, setText] = useState("");
   const [res, setRes] = useState(null);
