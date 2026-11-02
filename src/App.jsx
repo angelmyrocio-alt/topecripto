@@ -91,6 +91,7 @@ function getDev() {
 }
 const PRO_PRICE = "9,99 €";
 const PRO_PER = "semana";
+const PRO_MONTH = "34,99 €";
 
 // ===== Direcciones: cada pestaña y cada promesa tiene su URL =====
 // /  ·  /ceros  ·  /promesas  ·  /promesas/<id>  ·  /indicador  ·  /pro
@@ -191,7 +192,7 @@ export default function App() {
             <div className="brand">TOPE<b>CRIPTO</b></div>
             <div className="live"><i style={{ background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : failed ? "SIN CONEXIÓN" : "cargando…"}</div>
           </div>
-          <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · " + PRO_PRICE + "/" + PRO_PER}</button>
+          <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · desde " + PRO_PRICE}</button>
         </div>
 
         {tab !== "ind" && (
@@ -460,6 +461,7 @@ function Pro({ coins, total, unlocked, onBack, onCode, codeMsg, onTope }) {
     <section className="stack">
       <div className="plan">
         <div className="head"><span className="name">Topecripto Pro</span><span className="price">{PRO_PRICE}<small> /{PRO_PER}</small></span></div>
+        <div className="head"><span className="flabel">o el mes entero</span><span className="price">{PRO_MONTH}<small> /mes</small></span></div>
         <ul>
           <li>Indicador Tope a 1 semana y 1 mes, con veredicto de tu precio</li>
           <li>Todas las monedas y el oro</li>
@@ -578,7 +580,7 @@ function Indicador({ coins, code, onPro }) {
       {res && res.sym === sym && res.plazos.some((p) => p.locked) && (
         <div className="tope tope-lock">
           <div className="tope-h"><b>1 semana y 1 mes</b><span className="t" style={{ background: "#ffd35a" }}>PRO</span></div>
-          <p className="tope-p">Los dos plazos, con su tope, su suelo y el veredicto, van incluidos en Pro: <b>{PRO_PRICE} a la {PRO_PER} en total</b>, para todas las monedas y el oro.</p>
+          <p className="tope-p">Los dos plazos, con su tope, su suelo y el veredicto, van incluidos en Pro: <b>{PRO_PRICE} la semana o {PRO_MONTH} el mes</b>, para todas las monedas y el oro.</p>
           <button className="gold" type="button" onClick={() => { trackInterest("tope_pro"); onPro(); }}>Desbloquear con Pro</button>
         </div>
       )}
