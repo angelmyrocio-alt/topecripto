@@ -81,17 +81,6 @@ function trackInterest(name) {
   } catch { /* sin ruido */ }
 }
 
-// Identificador anónimo de este móvil u ordenador (los códigos quedan atados a él)
-function getDev() {
-  try {
-    let d = localStorage.getItem("tc_dev");
-    if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, ""); localStorage.setItem("tc_dev", d); }
-    return d;
-  } catch { return ""; }
-}
-// Indicador Tope: producto aparte de Topecripto Pro
-const TOPE_WEEK = "9,99 €", TOPE_MONTH = "34,99 €";
-
 // ===== Direcciones: cada pestaña y cada promesa tiene su URL =====
 // /  ·  /ceros  ·  /promesas  ·  /promesas/<id>  ·  /indicador  ·  /pro
 const TAB_PATH = { diag: "/", zeros: "/ceros", hist: "/promesas", ind: "/indicador", pro: "/pro" };
@@ -118,7 +107,6 @@ export default function App() {
   const [route, setRoute] = useState(readPath);
   const tab = route.tab;
   const setTab = (k) => { setRoute({ tab: k, focus: null }); writePath(TAB_PATH[k]); };
-  const [unlocked, setUnlocked] = useState(false);
 
   // Botones atrás/adelante del navegador
   useEffect(() => {
@@ -147,22 +135,6 @@ export default function App() {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // Acceso completo con clave validada en el servidor: ?acceso=CODIGO
-  useEffect(() => {
-    let alive = true, code = null;
-    try { code = new URLSearchParams(window.location.search).get("acceso") || localStorage.getItem("tc_code"); } catch {}
-    if (!code) return;
-    fetch("/api/redeem?code=" + encodeURIComponent(code) + "&d=" + encodeURIComponent(getDev()))
-      .then((r) => r.json())
-      .then((d) => {
-        if (!alive) return;
-        if (d && d.ok) { setUnlocked(true); try { localStorage.setItem("tc_code", code); } catch {} }
-        else { try { localStorage.removeItem("tc_code"); } catch {} }
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
   // De dónde llega la gente: ?ref=ig (Instagram) o ?ref=tt (TikTok). Una vez por sesión.
   useEffect(() => {
     try {
@@ -187,13 +159,13 @@ export default function App() {
             <div className="brand">TOPE<b>CRIPTO</b></div>
             <div className="live"><i style={{ background: live ? "#35c759" : "#ffb02e", boxShadow: `0 0 6px ${live ? "#35c759" : "#ffb02e"}` }} />{live ? "EN VIVO" : failed ? "SIN CONEXIÓN" : "cargando…"}</div>
           </div>
-          <button className={"chip" + (unlocked ? " chipFull" : "")} type="button" onClick={goPro}>{unlocked ? "PRO ✓" : "PRO · 3 €/mes"}</button>
+          <span className="chip chipFull">TODO GRATIS</span>
         </div>
 
         {tab !== "ind" && (
           <button className="newbar" type="button" onClick={() => setTab("ind")}>
-            <span className="newtag">NUEVO</span>
-            <span>Indicador Tope: ya en la app, pruébalo gratis</span>
+            <span className="newtag">GRATIS</span>
+            <span>Indicador Tope: 1 día, 1 semana y 1 mes, sin pagar nada</span>
             <span aria-hidden="true">→</span>
           </button>
         )}
@@ -206,9 +178,9 @@ export default function App() {
         )}
 
         <div className="nav" role="tablist">
-          {[["diag", "Diagnóstico"], ["zeros", "Ceros"], ["hist", "Promesas"], ["ind", "Indicador"], ["pro", "PRO"]].map(([k, l]) => (
+          {[["diag", "Diagnóstico"], ["zeros", "Ceros"], ["hist", "Promesas"], ["ind", "Indicador"], ["pro", "Detector"]].map(([k, l]) => (
             <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => (k === "pro" ? goPro() : setTab(k))}>
-              {k === "pro" ? <span className="pill">PRO</span> : l}
+              {l}
             </button>
           ))}
         </div>
@@ -217,10 +189,10 @@ export default function App() {
         {tab === "zeros" && <Zeros coins={coins} total={total} />}
         {tab === "hist" && <Promises coins={coins} total={total} focus={route.focus} />}
         {tab === "ind" && <Indicador coins={coins} />}
-        {tab === "pro" && <Pro coins={coins} total={total} unlocked={unlocked} onBack={() => setTab("diag")} />}
+        {tab === "pro" && <Pro coins={coins} total={total} onBack={() => setTab("diag")} />}
 
         <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
-          <b>Telegram</b><span>¿Qué moneda o predicción quieres que estudiemos? Escríbenos</span><i aria-hidden="true">→</i>
+          <b>Telegram</b><span>Todas las dudas se responden por Telegram. Escríbenos y te contestamos ahí.</span><i aria-hidden="true">→</i>
         </a>
         <div className="foot"><span>{live ? "Datos en vivo · CoinGecko" : failed ? `Precios de reserva del ${FALLBACK_DATE}` : "Cargando datos en vivo…"}</span><span>No es asesoramiento financiero</span></div>
       </main>
@@ -432,52 +404,30 @@ function Promises({ coins, total, focus }) {
   );
 }
 
-// ===== PRO (plan único) =====
-function Pro({ coins, total, unlocked, onBack }) {
-  const sample = [["BTC", 1000000], ["SOL", 1000], ["DOGE", 10], ["SHIB", 1], ["PEPE", 0.01]];
-  const rows = sample.map(([s, t]) => {
-    const c = coins.find((x) => x.sym === s); if (!c) return null;
-    const cap = t * c.supply, z = zone(cap, total);
-    return <div className="row" key={s}><b>{s}</b><span className="p">{fmtPrice(t)}</span><span className="m">{fmtCap(cap)}</span><span className="t" style={{ background: z.c }}>{z.t}</span></div>;
-  });
-
-  if (unlocked) {
-    return (
-      <section className="stack">
-        <Detector coins={coins} total={total} />
-        <button className="ghost" type="button" onClick={onBack}>← Volver al diagnóstico</button>
-      </section>
-    );
-  }
-
+// ===== DETECTOR DE TABLAS (gratis) =====
+function Pro({ coins, total, onBack }) {
   return (
     <section className="stack">
-      <div className="plan">
-        <div className="head"><span className="name">Topecripto Pro</span><span className="price">3 €<small> /mes</small></span></div>
-        <ul>
+      <Detector coins={coins} total={total} />
+      <div className="plan planFree">
+        <div className="head"><span className="name">Todo gratis</span><span className="price">0 €</span></div>
+        <ul className="free">
+          <li>Diagnóstico de cualquier predicción</li>
+          <li>El juego de los ceros</li>
+          <li>Todo «Quién prometió qué»</li>
           <li>Detector de tablas de influencers</li>
-          <li>Watchlist con alertas de veredicto</li>
-          <li>Avisos cuando entra un caso nuevo en «Quién prometió qué» o se resuelve uno en curso</li>
-          <li>Todas las monedas, no solo las principales</li>
+          <li>Indicador Tope: 1 día, 1 semana y 1 mes</li>
+          <li>Compartir el veredicto</li>
         </ul>
-        <div className="stack">
-          <p className="flabel">Lo anunciaremos primero en nuestras redes. Síguenos para enterarte:</p>
-          <div className="social">
-            <a className="gold sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
-            <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
-                <a className="ghost sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
-          </div>
+      </div>
+      <div className="stack">
+        <p className="flabel">Síguenos para no perderte nada:</p>
+        <div className="social">
+          <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>Telegram · t.me/topecripto</a>
+          <a className="ghost sbtn" href={INSTAGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_instagram")}>Instagram · @topecripto</a>
+          <a className="ghost sbtn" href={TIKTOK} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_tiktok")}>TikTok · @topecripto.app</a>
         </div>
       </div>
-      <div className="locked">
-        <div className="preview">{rows}</div>
-        <div className="overlay"><strong>Detector de tablas</strong><p>Pega la tabla de precios de un influencer y te marca qué objetivos rompen la aritmética.</p></div>
-      </div>
-      <div className="plan planFree">
-        <div className="head"><span className="name">Gratis</span><span className="price">0 €</span></div>
-        <ul className="free"><li>Diagnóstico de cualquier predicción</li><li>El juego de los ceros</li><li>Todo «Quién prometió qué»</li><li>Compartir el veredicto</li></ul>
-      </div>
-      <p className="note">Pro aún no está abierto y no se cobra nada.</p>
       <button className="ghost" type="button" onClick={onBack}>← Volver al diagnóstico</button>
     </section>
   );
@@ -495,9 +445,6 @@ const vColor = (v) => (VERDICTS.find((x) => x[0] === v) || [0, "#8891a8"])[1];
 const fmtTope = (p) => (p >= 1000 ? String(Math.round(p)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " $" : fmtPrice(p));
 
 function Indicador({ coins }) {
-  const [tcode, setTcode] = useState(() => { try { return localStorage.getItem("tc_tope") || ""; } catch { return ""; } });
-  const [cin, setCin] = useState("");
-  const [cmsg, setCmsg] = useState(null);
   const base = coins.map((c) => ({ sym: c.sym, name: c.name }));
   const list = [...base.slice(0, 1), ...TOPE_EXTRA, ...base.slice(1)];
   const [sym, setSym] = useState(() => (hashSym() && list.some((c) => c.sym === hashSym()) ? hashSym() : "BTC"));
@@ -508,18 +455,13 @@ function Indicador({ coins }) {
 
   useEffect(() => { trackInterest("tope_view"); }, []);
 
-  const run = async (s, t, kk) => {
+  const run = async (s, t) => {
     setBusy(true); setErr(null);
     try {
-      const k = kk !== undefined ? kk : tcode;
-      const r = await fetch(`/api/tope?c=${encodeURIComponent(s)}${t ? "&t=" + t : ""}${k ? "&k=" + encodeURIComponent(k) + "&d=" + encodeURIComponent(getDev()) : ""}`);
+      const r = await fetch(`/api/tope?c=${encodeURIComponent(s)}${t ? "&t=" + t : ""}`);
       const d = await r.json();
       if (!r.ok || d.error) throw new Error(d.error || "error");
       setRes(d);
-      if (k && kk !== undefined) {
-        if (d.access && d.access.ok) { setTcode(k); setCmsg(null); try { localStorage.setItem("tc_tope", k); } catch {} }
-        else setCmsg(d.access && d.access.reason === "otro-dispositivo" ? "Ese código ya se usa en otro móvil u ordenador." : d.access && d.access.reason === "caducada" ? "Ese código ha caducado." : "Código no válido.");
-      } else if (k && d.access && !d.access.ok) { setTcode(""); try { localStorage.removeItem("tc_tope"); } catch {} }
       if (t) trackInterest("tope_calc");
     } catch (e) { setErr("No se pudo calcular ahora. Prueba en un minuto."); }
     finally { setBusy(false); }
@@ -559,7 +501,7 @@ function Indicador({ coins }) {
       {res && res.sym === sym && (
         <div className="stack">
           <p className="compare">{sym === "ORO" ? "Oro (PAXG)" : sym} hoy: <b>{fmtTope(res.price)}</b>{res.target ? <> · objetivo: <b>{fmtTope(res.target)}</b></> : null}</p>
-          {res.plazos.map((p) => p.locked ? null : (
+          {res.plazos.map((p) => (
             <div className="tope" key={p.k}>
               <div className="tope-h">
                 <b>En {p.label}</b>
@@ -577,28 +519,8 @@ function Indicador({ coins }) {
         </div>
       )}
 
-      {res && res.sym === sym && res.plazos.some((p) => p.locked) && (
-        <div className="tope tope-lock">
-          <div className="tope-h"><b>Indicador Tope</b><span className="t" style={{ background: "#ffd35a" }}>APARTE</span></div>
-          <p className="tope-p">1 semana y 1 mes, con tope, suelo y veredicto. Se paga aparte de la app: no va incluido en ningún plan de Topecripto.</p>
-          <div className="tope-g">
-            <span>Acceso 1 semana</span><b>{TOPE_WEEK}</b>
-            <span>Acceso 1 mes</span><b>{TOPE_MONTH}</b>
-          </div>
-          <a className="gold sbtn" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("tope_pro")}>Conseguir el indicador · escríbenos por Telegram</a>
-          <p className="tope-p">Te respondemos con cómo pagar y te enviamos tu código. Funciona en un solo móvil u ordenador.</p>
-          <div className="ask">
-            <label htmlFor="tcode">¿Tienes código?</label>
-            <input id="tcode" autoComplete="off" placeholder="TC-XXXX-XXXX-XXXX" value={cin} style={{ fontSize: 16 }}
-              onChange={(e) => setCin(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter" && cin.trim()) run(sym, target, cin.trim()); }} />
-          </div>
-          <button className="ghost" type="button" disabled={!cin.trim()} onClick={() => run(sym, target, cin.trim())}>Activar código</button>
-          {cmsg && <p className="note">{cmsg}</p>}
-        </div>
-      )}
-
       <a className="tgbar" href={TELEGRAM} target="_blank" rel="noopener noreferrer" onClick={() => trackInterest("follow_telegram")}>
-        <b>¿Más información?</b><span>Pregúntanos lo que quieras por Telegram</span><i aria-hidden="true">→</i>
+        <b>¿Dudas?</b><span>Todas las dudas se responden por Telegram. Escríbenos y te contestamos ahí.</span><i aria-hidden="true">→</i>
       </a>
 
       <div className="vlist">
