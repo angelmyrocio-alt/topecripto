@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="robots" content="noindex" />
+<title>Topecripto · Máquina de clips</title>
+<style>
+  :root{
+    --bg:#05070a; --panel:#0b0e13; --line:#1c232d;
+    --tx:#c7d0dc; --mut:#5b6675; --white:#fff; --gold:#ffd35a;
+    --green:#35c759; --amber:#ffb02e; --orange:#ff7a2d; --red:#ff2d2d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--tx);overflow:hidden}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+  /* ---------- Panel de ajustes ---------- */
+  #controls{
+    position:fixed;inset:0;z-index:30;overflow:auto;
+    display:flex;flex-direction:column;gap:14px;
+    padding:22px 18px calc(22px + env(safe-area-inset-bottom));
+    max-width:460px;margin:0 auto;
+  }
+  #controls h1{font-size:19px;color:var(--white);font-weight:800;letter-spacing:-.01em}
+  #controls .wm{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:2px}
+  #controls .wm b{color:var(--gold)}
+  label{display:block;font-size:12.5px;color:var(--mut);margin:0 0 6px;font-weight:600}
+  .coins{display:flex;flex-wrap:wrap;gap:7px}
+  .coins button{
+    flex:0 0 auto;padding:9px 13px;border-radius:11px;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);font-size:14px;font-weight:700;cursor:pointer
+  }
+  .coins button[aria-pressed="true"]{border-color:var(--gold);color:var(--white);background:#15110a}
+  .field{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .field input{
+    width:100%;background:transparent;border:0;color:var(--white);font-size:26px;font-weight:800;outline:none
+  }
+  .field input::placeholder{color:#3a4453}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hintcalc{font-size:12.5px;color:var(--mut);line-height:1.5;padding:2px 2px 0}
+  .hintcalc b{color:var(--tx)}
+  .play{
+    margin-top:4px;padding:16px;border-radius:14px;border:0;cursor:pointer;
+    background:var(--gold);color:#1a1205;font-size:17px;font-weight:800
+  }
+  .steps{font-size:12.5px;color:var(--mut);line-height:1.6;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .steps b{color:var(--tx)}
+  .steps ol{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+
+  /* ---------- Escenario del clip ---------- */
+  #stage{
+    position:fixed;inset:0;z-index:10;display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:7dvh 7vw;gap:0;background:var(--bg);overflow:hidden
+  }
+  #stage.on{display:flex}
+  .wmark{position:absolute;top:5.2dvh;left:0;right:0;font-size:3.4vw;letter-spacing:.28em;color:var(--mut);font-weight:800}
+  .wmark b{color:var(--gold)}
+  #tag{font-size:4.4vw;font-weight:800;letter-spacing:.04em;color:var(--mut);margin-bottom:1.4dvh;opacity:0}
+  #q{font-size:12.5vw;line-height:1.02;font-weight:900;color:var(--white);letter-spacing:-.02em}
+  #q .amt{color:var(--gold)}
+
+  .gaugeWrap{position:relative;width:74vw;max-width:62dvh;margin:2.2dvh 0 0}
+  .gaugeWrap svg{width:100%;display:block;overflow:visible}
+  #needle{transform-box:fill-box;transform-origin:50% 100%;transition:transform .5s cubic-bezier(.3,1.5,.5,1)}
+  #qmark{
+    position:absolute;left:0;right:0;top:34%;font-size:13vw;font-weight:900;color:var(--white);
+    opacity:0;transition:opacity .2s
+  }
+
+  #num{opacity:0;transform:translateY(14px);transition:opacity .35s,transform .35s;margin-top:1.4dvh}
+  #num .lab{font-size:4.6vw;font-weight:800;letter-spacing:.06em;color:var(--mut)}
+  #num .big{font-size:13.5vw;line-height:1.04;font-weight:900;color:var(--white);letter-spacing:-.02em}
+  #num .big .u{font-size:7vw;color:var(--tx)}
+
+  #cmp{opacity:0;transform:translateY(12px);transition:opacity .35s,transform .35s;margin-top:1.6dvh;
+    font-size:6.2vw;font-weight:800;line-height:1.15}
+  #cmp .k{color:var(--white)}
+
+  #stamp{
+    opacity:0;transform:scale(1.6) rotate(-7deg);transition:opacity .22s,transform .28s cubic-bezier(.2,1.6,.4,1);
+    margin-top:2.2dvh;font-size:11vw;font-weight:900;letter-spacing:.01em;
+    border:.9vw solid currentColor;border-radius:3vw;padding:.4dvh 4.5vw
+  }
+  #sub{opacity:0;transition:opacity .35s;margin-top:1.3dvh;font-size:5vw;font-weight:700;color:var(--tx)}
+
+  #cta{position:absolute;bottom:6dvh;left:0;right:0;opacity:0;transition:opacity .4s}
+  #cta .site{font-size:6.4vw;font-weight:900;color:var(--gold);letter-spacing:-.01em}
+  #cta .next{font-size:4.6vw;font-weight:700;color:var(--mut);margin-top:.8dvh}
+
+  .reveal{opacity:1 !important;transform:none !important}
+
+  /* botones flotantes tras reproducir */
+  #after{position:fixed;z-index:20;top:calc(2.4dvh + env(safe-area-inset-top));right:14px;display:none;gap:8px}
+  #after.on{display:flex}
+  #after button{border:1px solid var(--line);background:rgba(11,14,19,.8);color:var(--tx);
+    font-size:13px;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;backdrop-filter:blur(6px)}
+</style>
+</head>
+<body>
+
+<!-- ===== Ajustes ===== -->
+<section id="controls">
+  <div>
+    <div class="wm">TOPE<b>CRIPTO</b> · máquina de clips</div>
+    <h1>Monta el vídeo en un toque</h1>
+  </div>
+
+  <div>
+    <label>Moneda</label>
+    <div class="coins" id="coins"></div>
+  </div>
+
+  <div class="row2">
+    <div>
+      <label>Precio que prometen</label>
+      <div class="field"><input id="price" inputmode="decimal" autocomplete="off" placeholder="1" /></div>
+    </div>
+    <div>
+      <label>Próxima moneda (gancho final)</label>
+      <div class="field"><input id="next" autocomplete="off" placeholder="XRP a 500 $" /></div>
+    </div>
+  </div>
+
+  <div class="hintcalc" id="calc"></div>
+
+  <button class="play" id="go">▶ Reproducir y grabar</button>
+
+  <div class="steps">
+    <b>Cómo se graba (30 s):</b>
+    <ol>
+      <li>Abre esto <b>en el móvil</b>.</li>
+      <li>Elige moneda y escribe el precio.</li>
+      <li>Dale a <b>Reproducir</b> y empieza a <b>grabar la pantalla</b> a la vez.</li>
+      <li>Al acabar, recorta y súbelo. El gancho ya está en el primer segundo.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===== Clip ===== -->
+<section id="stage">
+  <div class="wmark">TOPE<b>CRIPTO</b></div>
+
+  <div id="tag">¿ES POSIBLE?</div>
+  <div id="q"></div>
+
+  <div class="gaugeWrap">
+    <svg viewBox="0 0 400 230" aria-hidden="true">
+      <path d="M40 210 A170 170 0 0 1 95 84"   stroke="#35c759" stroke-width="22" fill="none" stroke-linecap="round"/>
+      <path d="M95 84  A170 170 0 0 1 170 46"  stroke="#ffb02e" stroke-width="22" fill="none"/>
+      <path d="M170 46 A170 170 0 0 1 250 52"  stroke="#ff7a2d" stroke-width="22" fill="none"/>
+      <path d="M250 52 A170 170 0 0 1 360 210" stroke="#ff2d2d" stroke-width="22" fill="none" stroke-linecap="round"/>
+      <text x="356" y="206" text-anchor="end" fill="#ff2d2d" font-size="15" font-weight="700" font-family="monospace">TOPE</text>
+      <g id="needle">
+        <line x1="200" y1="200" x2="200" y2="70" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <circle cx="200" cy="200" r="15" fill="#0b0e13" stroke="#3a4453" stroke-width="3"/>
+      <circle cx="200" cy="200" r="6" fill="#fff" id="hub"/>
+    </svg>
+    <div id="qmark">?</div>
+  </div>
+
+  <div id="num"><div class="lab">HARÍAN FALTA</div><div class="big mono"></div></div>
+  <div id="cmp"></div>
+  <div id="stamp"></div>
+  <div id="sub"></div>
+
+  <div id="cta">
+    <div class="site">topecripto.com</div>
+    <div class="next" id="ctanext"></div>
+  </div>
+</section>
+
+<div id="after">
+  <button id="replay">↻ Repetir</button>
+  <button id="edit">‹ Editar</button>
+</div>
+
+<script>
+// ===== Datos de las monedas (oferta en circulación, de topecripto) =====
+var TOTAL = 2.974e12; // todo el mercado cripto
+var COINS = [
+  { s:"BTC",  n:"Bitcoin",   price:83838,       supply:20.08e6   },
+  { s:"ETH",  n:"Ethereum",  price:2685.87,     supply:122.07e6  },
+  { s:"XRP",  n:"XRP",       price:1.55,        supply:62.879e9  },
+  { s:"SOL",  n:"Solana",    price:120.56,      supply:587.713e6 },
+  { s:"DOGE", n:"Dogecoin",  price:0.09735,     supply:156.07e9  },
+  { s:"ADA",  n:"Cardano",   price:0.2564,      supply:37.529e9  },
+  { s:"SHIB", n:"Shiba Inu", price:0.000005842, supply:589.239e12},
+  { s:"PEPE", n:"Pepe",      price:0.00000444,  supply:420.69e12 },
+  { s:"LINK", n:"Chainlink", price:13.2,        supply:657.1e6   },
+  { s:"HBAR", n:"Hedera",    price:0.15,        supply:42.3e9    },
+];
+var DEF_TARGET = { BTC:1000000, ETH:50000, XRP:100, SOL:1000, DOGE:1, ADA:100, SHIB:0.01, PEPE:0.01, LINK:1000, HBAR:10 };
+
+var sel = 4; // DOGE por defecto
+
+// ---- Formato en español ----
+function esNum(x,d){ return x.toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtCap(v){
+  if(v>=1e12){ var x=v/1e12; return esNum(x, x>=100?0:x>=10?1:2)+(x<1.005?" billón":" billones"); }
+  if(v>=1e9){ var x2=v/1e9; return esNum(x2, x2>=100?0:x2>=10?1:1)+" mil M"; }
+  if(v>=1e6){ return esNum(v/1e6,0)+" M"; }
+  return esNum(v,0);
+}
+function fmtPrice(p){
+  if(p>=1) return esNum(p, p>=1000?0:2)+" $";
+  if(p>=0.01) return esNum(p,3)+" $";
+  return p.toLocaleString("es-ES",{maximumFractionDigits:8})+" $";
+}
+function parseEs(t){ if(!t) return 0; return parseFloat(String(t).replace(/\./g,"").replace(",",".").replace(/[^0-9.]/g,""))||0; }
+
+// ---- Cálculo ----
+function calc(){
+  var c = COINS[sel];
+  var target = parseEs(document.getElementById("price").value) || DEF_TARGET[c.s] || c.price*10;
+  var cap = target * c.supply;
+  var ratio = cap / TOTAL;              // veces el mercado total
+  var mult = target / c.price;          // veces el precio de hoy
+  var pos = 1 - 1/(1 + ratio*3);        // 0..1 posición de la aguja
+  var zone, verd, sub;
+  if(ratio < 0.10){ zone="var(--green)";  verd="SÍ CABE"; }
+  else if(ratio < 0.33){ zone="var(--amber)";  verd="AJUSTADO"; }
+  else if(ratio < 1){ zone="var(--orange)"; verd="MUY DIFÍCIL"; }
+  else { zone="var(--red)"; verd="IMPOSIBLE"; }
+  var cmp = ratio>=1
+    ? '<span class="k">'+esNum(ratio, ratio>=10?0:1)+'×</span> todo el cripto del mundo'
+    : '= el <span class="k">'+esNum(ratio*100, ratio<0.1?1:0)+'%</span> de todo el cripto';
+  sub = mult>=1 ? "Exige ×"+esNum(mult, mult>=100?0:mult>=10?0:1)+" su precio de hoy"
+                : "Por debajo de su precio de hoy";
+  return { c:c, target:target, cap:cap, ratio:ratio, mult:mult, pos:pos, zone:zone, verd:verd, cmp:cmp, sub:sub };
+}
+
+// ---- Panel ----
+var coinsBox = document.getElementById("coins");
+COINS.forEach(function(c,i){
+  var b=document.createElement("button");
+  b.textContent=c.s; b.setAttribute("aria-pressed", i===sel);
+  b.onclick=function(){ sel=i; [].forEach.call(coinsBox.children,function(x,j){x.setAttribute("aria-pressed",j===i);});
+    document.getElementById("price").value=""; document.getElementById("price").placeholder=trimNum(DEF_TARGET[c.s]); refresh(); };
+  coinsBox.appendChild(b);
+});
+function trimNum(n){ return n>=1? esNum(n,0) : String(n).replace(".",","); }
+function refresh(){
+  var r=calc(), c=r.c;
+  document.getElementById("price").placeholder = trimNum(DEF_TARGET[c.s]||0);
+  if(!document.getElementById("next").value){
+    var others=COINS.filter(function(x){return x.s!==c.s;});
+    var nx=others[(sel+2)%others.length];
+    document.getElementById("next").placeholder = nx.s+" a "+trimNum(DEF_TARGET[nx.s]||0)+" $";
+  }
+  document.getElementById("calc").innerHTML =
+    "<b>"+c.n+"</b> a "+fmtPrice(r.target)+" = <b>"+fmtCap(r.cap)+" $</b> de capitalización · "+
+    (r.ratio>=1? "<b>"+esNum(r.ratio,1)+"×</b> todo el cripto" : "el <b>"+esNum(r.ratio*100, r.ratio<0.1?1:0)+"%</b> del mercado")+
+    " · veredicto: <b>"+r.verd+"</b>";
+}
+document.getElementById("price").addEventListener("input", refresh);
+document.getElementById("next").addEventListener("input", function(){});
+refresh();
+
+// ---- Reproducir el clip ----
+var timers=[];
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function at(ms,fn){ timers.push(setTimeout(fn,ms)); }
+
+function countUp(el, to, ms){
+  var t0=performance.now();
+  function step(now){
+    var k=Math.min(1,(now-t0)/ms); var e=1-Math.pow(1-k,3);
+    el.innerHTML = fmtCap(to*e)+' <span class="u">$</span>';
+    if(k<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function play(){
+  var r=calc();
+  // preparar textos
+  document.getElementById("q").innerHTML = "¿"+r.c.n.toUpperCase()+' a <span class="amt">'+trimNum(r.target)+(r.target>=1?" $":" $")+"</span>?";
+  var stamp=document.getElementById("stamp");
+  stamp.textContent=r.verd; stamp.style.color=r.zone;
+  document.getElementById("sub").textContent=r.sub;
+  document.getElementById("cmp").innerHTML=r.cmp;
+  var nx=document.getElementById("next").value || document.getElementById("next").placeholder;
+  document.getElementById("ctanext").textContent = nx ? "Próximo: "+nx : "Compruébalo tú";
+
+  // reset
+  ["tag","num","cmp","stamp","sub","cta"].forEach(function(id){document.getElementById(id).classList.remove("reveal");});
+  document.getElementById("qmark").style.opacity=0;
+  var needle=document.getElementById("needle");
+  needle.style.transition="none"; needle.style.transform="rotate(-78deg)";
+
+  // mostrar escenario + pantalla completa
+  document.getElementById("controls").style.display="none";
+  document.getElementById("stage").classList.add("on");
+  document.getElementById("after").classList.remove("on");
+  try{ document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); }catch(e){}
+
+  clearTimers();
+  // 0.0s  gancho + aguja temblando
+  var swing=[-78,64,-40,52,-18,38,8];
+  swing.forEach(function(a,i){ at(60+i*95,function(){ needle.style.transition="transform .12s linear"; needle.style.transform="rotate("+a+"deg)"; }); });
+  at(120,function(){ document.getElementById("tag").classList.add("reveal"); });
+  at(300,function(){ document.getElementById("qmark").style.opacity=1; });
+
+  // 0.95s  la aguja SE CLAVA en la zona final
+  at(950,function(){
+    needle.style.transition="transform .55s cubic-bezier(.3,1.5,.5,1)";
+    needle.style.transform="rotate("+(-78 + r.pos*156)+"deg)";
+    document.getElementById("hub").setAttribute("fill", r.zone);
+    document.querySelector("#needle line").setAttribute("stroke","#fff");
+  });
+
+  // 1.7s  el número sube de golpe
+  at(1650,function(){ document.getElementById("qmark").style.opacity=0; });
+  at(1750,function(){
+    document.getElementById("num").classList.add("reveal");
+    countUp(document.querySelector("#num .big"), r.cap, 1000);
+  });
+
+  // 3.2s  la comparación que choca
+  at(3200,function(){ document.getElementById("cmp").classList.add("reveal"); });
+
+  // 5.0s  el sello del veredicto
+  at(5000,function(){ document.getElementById("stamp").classList.add("reveal"); });
+  at(5450,function(){ document.getElementById("sub").classList.add("reveal"); });
+
+  // 7.0s  cierre + gancho a la próxima
+  at(7000,function(){ document.getElementById("cta").classList.add("reveal"); });
+  at(8200,function(){ document.getElementById("after").classList.add("on"); });
+}
+
+document.getElementById("go").onclick=play;
+document.getElementById("replay").onclick=play;
+document.getElementById("edit").onclick=function(){
+  clearTimers();
+  try{ document.fullscreenElement&&document.exitFullscreen(); }catch(e){}
+  document.getElementById("stage").classList.remove("on");
+  document.getElementById("after").classList.remove("on");
+  document.getElementById("controls").style.display="flex";
+};
+</script>
+</body>
+</html>
