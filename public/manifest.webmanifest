@@ -1,13 +1,24 @@
 {
-  "name": "Topecripto",
+  "id": "/",
+  "name": "Topecripto · reality check de predicciones cripto",
   "short_name": "Topecripto",
-  "description": "Reality check de predicciones cripto. Sin hype, solo números.",
+  "description": "Comprueba si el precio que te prometen para una criptomoneda es posible. Gratis y sin registro.",
+  "lang": "es",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#05070a",
   "theme_color": "#0b0e13",
+  "categories": ["finance", "utilities", "education"],
   "icons": [
     { "src": "/icon.png", "sizes": "1000x1000", "type": "image/png", "purpose": "any" },
     { "src": "/icon-symbol.png", "sizes": "1000x1000", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Indicador Tope", "short_name": "Indicador", "url": "/indicador" },
+    { "name": "Quién prometió qué", "short_name": "Promesas", "url": "/promesas" },
+    { "name": "El juego de los ceros", "short_name": "Ceros", "url": "/ceros" }
   ]
 }

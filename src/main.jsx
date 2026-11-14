@@ -10,3 +10,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Analytics />
   </React.StrictMode>
 );
+
+// Permite instalar Topecripto en el móvil y que abra sin conexión.
+// El service worker da prioridad a la red: nunca sirve datos viejos.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

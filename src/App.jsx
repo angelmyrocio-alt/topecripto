@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { CASES, ST_COLOR } from "./promesas.js";
+import { FAQ } from "./faq.js";
 
 // ===== Datos de reserva (CoinGecko, 26/09/2026). Se sustituyen por los datos en vivo de /api/prices =====
 const FALLBACK_DATE = "26/09/2026";
@@ -291,9 +292,24 @@ function Diag({ coins, total }) {
           <li>Verde si cabe con holgura, rojo si haría falta más dinero del que existe. Solo aritmética.</li>
         </ol>
       </details>
+      <Faq />
     </section>
   );
 }
+
+// Preguntas frecuentes. También se imprimen en el HTML al construir (scripts/prerender.mjs),
+// para que buscadores y asistentes de IA puedan leerlas y citarlas.
+const Faq = () => (
+  <div className="faq">
+    <h2>Preguntas frecuentes</h2>
+    {FAQ.map((f) => (
+      <details key={f.q}>
+        <summary>{f.q}</summary>
+        <p>{f.a}</p>
+      </details>
+    ))}
+  </div>
+);
 
 const Reads = ({ cap, mult, pct, col, multTxt }) => (
   <div className="reads">
@@ -684,6 +700,9 @@ a.ghost.sbtn{color:#e9f0f7}
 .shot figcaption{padding:8px 10px;font-size:11px;color:#7b8696;border-top:1px solid #1c232d}
 .vlist{display:grid;gap:6px}
 details ol b{color:#e9f0f7}
+.faq{display:grid;gap:8px}
+.faq h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#5b6675;margin:6px 0 0}
+.faq p{margin:10px 0 0;font-size:12px;color:#8891a8;line-height:1.55}
 .note{font-size:10.5px;color:#5b6675;text-align:center;line-height:1.5;margin:0}
 .foot{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;color:#454f5b;padding-top:6px;border-top:1px solid #1c232d}
 @media (prefers-reduced-motion:reduce){.tc-root *{transition:none!important;animation:none!important}}
