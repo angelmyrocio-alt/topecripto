@@ -52,16 +52,16 @@
   #stage{
     position:fixed;inset:0;z-index:10;display:none;
     flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:7dvh 7vw;gap:0;background:var(--bg);overflow:hidden
+    text-align:center;padding:4dvh 6vw;gap:0;background:var(--bg);overflow:hidden
   }
   #stage.on{display:flex}
-  .wmark{position:absolute;top:5.2dvh;left:0;right:0;font-size:3.4vw;letter-spacing:.28em;color:var(--mut);font-weight:800}
+  .wmark{font-size:3.2vw;letter-spacing:.28em;color:var(--mut);font-weight:800;margin-bottom:1.4dvh}
   .wmark b{color:var(--gold)}
-  #tag{font-size:4.4vw;font-weight:800;letter-spacing:.04em;color:var(--mut);margin-bottom:1.4dvh;opacity:0}
-  #q{font-size:12.5vw;line-height:1.02;font-weight:900;color:var(--white);letter-spacing:-.02em}
+  #tag{font-size:4.2vw;font-weight:800;letter-spacing:.04em;color:var(--mut);margin-bottom:1dvh;opacity:0}
+  #q{font-size:10.5vw;line-height:1.02;font-weight:900;color:var(--white);letter-spacing:-.02em}
   #q .amt{color:var(--gold)}
 
-  .gaugeWrap{position:relative;width:74vw;max-width:62dvh;margin:2.2dvh 0 0}
+  .gaugeWrap{position:relative;width:60vw;max-width:44dvh;margin:1.4dvh 0 0}
   .gaugeWrap svg{width:100%;display:block;overflow:visible}
   #needle{transform-box:fill-box;transform-origin:50% 100%;transition:transform .5s cubic-bezier(.3,1.5,.5,1)}
   #qmark{
@@ -69,25 +69,25 @@
     opacity:0;transition:opacity .2s
   }
 
-  #num{opacity:0;transform:translateY(14px);transition:opacity .35s,transform .35s;margin-top:1.4dvh}
-  #num .lab{font-size:4.6vw;font-weight:800;letter-spacing:.06em;color:var(--mut)}
-  #num .big{font-size:13.5vw;line-height:1.04;font-weight:900;color:var(--white);letter-spacing:-.02em}
-  #num .big .u{font-size:7vw;color:var(--tx)}
+  #num{opacity:0;transform:translateY(14px);transition:opacity .35s,transform .35s;margin-top:1dvh}
+  #num .lab{font-size:4.2vw;font-weight:800;letter-spacing:.06em;color:var(--mut)}
+  #num .big{font-size:11.5vw;line-height:1.04;font-weight:900;color:var(--white);letter-spacing:-.02em}
+  #num .big .u{font-size:6vw;color:var(--tx)}
 
-  #cmp{opacity:0;transform:translateY(12px);transition:opacity .35s,transform .35s;margin-top:1.6dvh;
-    font-size:6.2vw;font-weight:800;line-height:1.15}
+  #cmp{opacity:0;transform:translateY(12px);transition:opacity .35s,transform .35s;margin-top:1.1dvh;
+    font-size:5.4vw;font-weight:800;line-height:1.15}
   #cmp .k{color:var(--white)}
 
   #stamp{
     opacity:0;transform:scale(1.6) rotate(-7deg);transition:opacity .22s,transform .28s cubic-bezier(.2,1.6,.4,1);
-    margin-top:2.2dvh;font-size:11vw;font-weight:900;letter-spacing:.01em;
-    border:.9vw solid currentColor;border-radius:3vw;padding:.4dvh 4.5vw
+    margin-top:1.6dvh;font-size:9vw;font-weight:900;letter-spacing:.01em;
+    border:.9vw solid currentColor;border-radius:3vw;padding:.3dvh 4.5vw
   }
-  #sub{opacity:0;transition:opacity .35s;margin-top:1.3dvh;font-size:5vw;font-weight:700;color:var(--tx)}
+  #sub{opacity:0;transition:opacity .35s;margin-top:1dvh;font-size:4.6vw;font-weight:700;color:var(--tx)}
 
-  #cta{position:absolute;bottom:6dvh;left:0;right:0;opacity:0;transition:opacity .4s}
-  #cta .site{font-size:6.4vw;font-weight:900;color:var(--gold);letter-spacing:-.01em}
-  #cta .next{font-size:4.6vw;font-weight:700;color:var(--mut);margin-top:.8dvh}
+  #cta{opacity:0;transition:opacity .4s;margin-top:1.8dvh}
+  #cta .site{font-size:6vw;font-weight:900;color:var(--gold);letter-spacing:-.01em}
+  #cta .next{font-size:4.2vw;font-weight:700;color:var(--mut);margin-top:.6dvh}
 
   .reveal{opacity:1 !important;transform:none !important}
 
